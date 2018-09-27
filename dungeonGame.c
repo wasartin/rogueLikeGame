@@ -4,8 +4,10 @@
 #include <stdint.h>
 #include <time.h>
 #include <endian.h>
+#include <limits.h>
+#include <inttypes.h>
 
-#include "dungeon.h"
+#include "dungeonInfo.h"
 #include "buildDungeon.h"
 
 const char roomCell = '.';
@@ -14,11 +16,15 @@ const char playerCell = '@';
 const char rockCell = ' ';
 
 void printMap(Dungeon *d);
+void printPaths(Dungeon *d);
+void printTunnelPaths(Dungeon *d);
 void srand(unsigned seed);
 void createDungeon(Dungeon *d);
 void saveGame(Dungeon *d);
 void loadGame(Dungeon *d);
 void placeCharacter(Dungeon *d, int row, int col);
+static void generateNormalPathMap(Dungeon *d);
+static void generateTunnelPathMap(Dungeon *d);
 
 int main(int argc, char *argv[]){
   int seed = time(NULL);
@@ -57,11 +63,17 @@ int main(int argc, char *argv[]){
   if(isSave == TRUE){
     saveGame(&d);
   }
+
+  generateNormalPathMap(&d);
+  generateTunnelPathMap(&d);
  
   free(d.rooms);
-
+  
   printf("Map Created\n");
   printMap(&d);
+  printPaths(&d);
+  printTunnelPaths(&d);
+  
   return 0;
 }
 
@@ -79,6 +91,42 @@ void printMap(Dungeon *d){
   for(row = 0; row < DUNGEON_HEIGHT; row++){
     for(col = 0; col < DUNGEON_WIDTH; col++){
       printf("%c", d->map[row][col]);
+    }
+    printf("\n");
+  }
+}
+
+void printPaths(Dungeon *d){
+  uint8_t x, y;
+  for( y = 0; y < DUNGEON_HEIGHT; y++){
+    for(x = 0; x < DUNGEON_WIDTH; x++){
+      if(y == d->pc.location.row && x == d->pc.location.col){
+	printf("@");
+      }else {
+	if(d->hardnessMap[y][x] != MIN_HARDNESS){
+	  printf(" ");
+	}else{
+	  printf("%d", d->nonTunnelPaths[y][x] % 10);	
+	}
+      }
+    }
+    printf("\n");
+  }
+}
+
+void printTunnelPaths(Dungeon *d){
+  uint8_t x, y;
+  for( y = 0; y < DUNGEON_HEIGHT; y++){
+    for(x = 0; x < DUNGEON_WIDTH; x++){
+      if(y == d->pc.location.row && x == d->pc.location.col){
+	printf("@");
+      }else {
+	if(d->hardnessMap[y][x] == MAX_HARDNESS){
+	  printf(" ");
+	}else{
+	  printf("%d", d->tunnelPaths[y][x] % 10);	
+	}
+      }
     }
     printf("\n");
   }
@@ -150,10 +198,8 @@ void loadGame(Dungeon *d){
   int i, j;
   for(i = 0; i < DUNGEON_HEIGHT; i++){
     for(j = 0; j < DUNGEON_WIDTH; j++){
-      //write in hardness map, while you are reading it
       fread(&d->hardnessMap[i][j], sizeof(uint8_t), 1, fp);
       if(d->hardnessMap[i][j] == MIN_HARDNESS){
-	//if 0, then it is either a room or a corridor so just write corridor for now
 	d->map[i][j] = corridorCell;
       }
       else{
@@ -191,4 +237,211 @@ void placeCharacter(Dungeon *d, int row, int col){
   d->pc.location.row = row;
   d->pc.location.col = col;
   d->map[row][col] = playerCell;
+}
+
+static int32_t comparator(const void *key, const void *with) {
+  return ((dist_t *) key)->cost - ((dist_t *) with)->cost;
+}
+
+static void generateNormalPathMap(Dungeon *d){
+  //make heap
+  heap_t h;
+  uint32_t x, y;
+  dist_t distance[DUNGEON_HEIGHT][DUNGEON_WIDTH], *u;
+  static int initilized = FALSE;
+
+   if(initilized == FALSE){
+    for(y = 0; y < DUNGEON_HEIGHT; y++){
+      for(x = 0; x < DUNGEON_WIDTH; x++){
+	distance[y][x].pos[1] = y;
+	distance[y][x].pos[0] = x;
+      }
+    }
+    initilized = TRUE;
+  } for(y = 0; y < DUNGEON_HEIGHT; y++){
+    for(x = 0; x < DUNGEON_WIDTH; x++){
+      distance[y][x].pos[dim_y] = y;
+      distance[y][x].pos[dim_x] = x;
+    }
+  }
+
+  //mark all of the dungeon at inifinty
+  for(y = 0; y < DUNGEON_HEIGHT; y++){
+    for(x = 0; x < DUNGEON_WIDTH; x++){
+      if(y == d->pc.location.row && x == d->pc.location.col){
+	distance[y][x].cost = 0;
+      }else{
+	distance[y][x].cost = INT_MAX;
+      }
+    }
+  }
+
+  //init
+  heap_init(&h, comparator, NULL);
+  
+  //heap insert
+  for(y = 0; y < DUNGEON_HEIGHT; y++){
+    for(x = 0; x < DUNGEON_WIDTH; x++){
+      if(d->hardnessMap[y][x] == MIN_HARDNESS){
+	distance[y][x].hn = heap_insert(&h, &distance[y][x]);
+      }
+      else{
+	distance[y][x].hn = NULL;
+      }
+    }
+  }
+
+  while((u = heap_remove_min(&h))){
+    u->hn = NULL;
+    
+    //check if it is in the heap AND if the spot is less than the current.
+    if((distance[u->pos[dim_y] - 1][u->pos[dim_x] - 1].hn) && 
+       (distance[u->pos[dim_y] - 1][u->pos[dim_x] - 1].cost >  u->cost + 1)) {
+      distance[u->pos[dim_y] - 1][u->pos[dim_x] - 1].cost = u->cost + 1;
+      heap_decrease_key_no_replace(&h, distance[u->pos[dim_y] - 1][u->pos[dim_x] - 1].hn);
+    }
+    if((distance[u->pos[dim_y] - 1][u->pos[dim_x]   ].hn) && 
+       (distance[u->pos[dim_y] - 1][u->pos[dim_x]   ].cost > u->cost + 1)){
+      distance[u->pos[dim_y] - 1][u->pos[dim_x]   ].cost =  u->cost + 1;
+      heap_decrease_key_no_replace(&h, distance[u->pos[dim_y] - 1][u->pos[dim_x]   ].hn);
+    }
+    if((distance[u->pos[dim_y] - 1][u->pos[dim_x] + 1].hn) &&
+       (distance[u->pos[dim_y] - 1][u->pos[dim_x] + 1].cost > u->cost + 1)){
+      distance[u->pos[dim_y] - 1][u->pos[dim_x] + 1].cost = u->cost + 1;
+      heap_decrease_key_no_replace(&h, distance[u->pos[dim_y] - 1][u->pos[dim_x] + 1].hn);
+    }
+    if((distance[u->pos[dim_y]   ][u->pos[dim_x] - 1].hn) &&
+       (distance[u->pos[dim_y]   ][u->pos[dim_x] - 1].cost > u->cost + 1)){
+      distance[u->pos[dim_y]   ][u->pos[dim_x] - 1].cost = u->cost + 1;
+      heap_decrease_key_no_replace(&h, distance[u->pos[dim_y]   ][u->pos[dim_x] - 1].hn);
+    }
+    if((distance[u->pos[dim_y]   ][u->pos[dim_x] + 1].hn) &&
+       (distance[u->pos[dim_y]   ][u->pos[dim_x] + 1].cost > u->cost + 1)){
+      distance[u->pos[dim_y]   ][u->pos[dim_x] + 1].cost = u->cost + 1;
+      heap_decrease_key_no_replace(&h, distance[u->pos[dim_y]   ][u->pos[dim_x] + 1].hn);
+    }
+    if((distance[u->pos[dim_y] + 1][u->pos[dim_x] - 1].hn) && 
+       (distance[u->pos[dim_y] + 1][u->pos[dim_x] - 1].cost > u->cost + 1)){
+      distance[u->pos[dim_y] + 1][u->pos[dim_x] - 1].cost = u->cost + 1;
+      heap_decrease_key_no_replace(&h, distance[u->pos[dim_y] + 1][u->pos[dim_x] - 1].hn);
+    }
+    if((distance[u->pos[dim_y] + 1][u->pos[dim_x]   ].hn) &&
+       (distance[u->pos[dim_y] + 1][u->pos[dim_x]   ].cost > u->cost + 1)){
+      distance[u->pos[dim_y] + 1][u->pos[dim_x]   ].cost = u->cost + 1;
+      heap_decrease_key_no_replace(&h, distance[u->pos[dim_y] + 1][u->pos[dim_x]   ].hn);
+    }
+    if((distance[u->pos[dim_y] + 1][u->pos[dim_x] + 1].hn) && 
+       (distance[u->pos[dim_y] + 1][u->pos[dim_x] + 1].cost > u->cost  + 1)){
+      distance[u->pos[dim_y] + 1][u->pos[dim_x] + 1].cost = u->cost + 1;
+      heap_decrease_key_no_replace(&h, distance[u->pos[dim_y] + 1][u->pos[dim_x] + 1].hn);
+      }
+    
+  }
+  for(y = 0; y < DUNGEON_HEIGHT; y++){
+    for(x = 0; x < DUNGEON_WIDTH; x++){
+	d->nonTunnelPaths[y][x] = distance[y][x].cost;
+    }
+  }
+  heap_delete(&h);
+
+}
+
+static void generateTunnelPathMap(Dungeon *d){
+    //make heap
+  heap_t h;
+  uint32_t x, y;
+  dist_t distance[DUNGEON_HEIGHT][DUNGEON_WIDTH], *u;
+  static int initilized = FALSE;
+
+  //since this will run multiply time, might as well save some time and see if it has been init yet.
+  if(initilized == FALSE){
+    for(y = 0; y < DUNGEON_HEIGHT; y++){
+      for(x = 0; x < DUNGEON_WIDTH; x++){
+	distance[y][x].pos[1] = y;
+	distance[y][x].pos[0] = x;
+      }
+    }
+    initilized = TRUE;
+  }
+
+  //mark all of the dungeon at inifinty
+  for(y = 0; y < DUNGEON_HEIGHT; y++){
+    for(x = 0; x < DUNGEON_WIDTH; x++){
+      if(y == d->pc.location.row && x == d->pc.location.col){
+	distance[y][x].cost = 0;
+      }else{
+	distance[y][x].cost = INT_MAX;
+      }
+    }
+  }
+
+  //init
+  heap_init(&h, comparator, NULL);
+  
+  //heap insert
+  for(y = 0; y < DUNGEON_HEIGHT; y++){
+    for(x = 0; x < DUNGEON_WIDTH; x++){
+      if(d->hardnessMap[y][x] != MAX_HARDNESS){
+	distance[y][x].hn = heap_insert(&h, &distance[y][x]);
+      }
+      else{
+	distance[y][x].hn = NULL;
+      }
+    }
+  }
+
+  while((u = heap_remove_min(&h))){
+    u->hn = NULL;
+    int32_t addlCost = (d->hardnessMap[u->pos[dim_y]][u->pos[dim_x]] / 85) + 1;
+    //  /*
+    //check if it is in the heap AND if the spot is less than the current.
+    if((distance[u->pos[dim_y] - 1][u->pos[dim_x] - 1].hn) && 
+       (distance[u->pos[dim_y] - 1][u->pos[dim_x] - 1].cost >  u->cost + addlCost)) {
+      distance[u->pos[dim_y] - 1][u->pos[dim_x] - 1].cost = u->cost + addlCost;
+      heap_decrease_key_no_replace(&h, distance[u->pos[dim_y] - 1][u->pos[dim_x] - 1].hn);
+    }
+    if((distance[u->pos[dim_y] - 1][u->pos[dim_x]   ].hn) && 
+       (distance[u->pos[dim_y] - 1][u->pos[dim_x]   ].cost > u->cost + addlCost)){
+      distance[u->pos[dim_y] - 1][u->pos[dim_x]   ].cost =  u->cost + addlCost;
+      heap_decrease_key_no_replace(&h, distance[u->pos[dim_y] - 1][u->pos[dim_x]   ].hn);
+    }
+    if((distance[u->pos[dim_y] - 1][u->pos[dim_x] + 1].hn) &&
+       (distance[u->pos[dim_y] - 1][u->pos[dim_x] + 1].cost > u->cost + addlCost)){
+      distance[u->pos[dim_y] - 1][u->pos[dim_x] + 1].cost = u->cost + addlCost;
+      heap_decrease_key_no_replace(&h, distance[u->pos[dim_y] - 1][u->pos[dim_x] + 1].hn);
+    }
+    if((distance[u->pos[dim_y]   ][u->pos[dim_x] - 1].hn) &&
+       (distance[u->pos[dim_y]   ][u->pos[dim_x] - 1].cost > u->cost + addlCost)){
+      distance[u->pos[dim_y]   ][u->pos[dim_x] - 1].cost = u->cost + addlCost;
+      heap_decrease_key_no_replace(&h, distance[u->pos[dim_y]   ][u->pos[dim_x] - 1].hn);
+    }
+    if((distance[u->pos[dim_y]   ][u->pos[dim_x] + 1].hn) &&
+       (distance[u->pos[dim_y]   ][u->pos[dim_x] + 1].cost > u->cost + addlCost)){
+      distance[u->pos[dim_y]   ][u->pos[dim_x] + 1].cost = u->cost + addlCost;
+      heap_decrease_key_no_replace(&h, distance[u->pos[dim_y]   ][u->pos[dim_x] + 1].hn);
+    }
+    if((distance[u->pos[dim_y] + 1][u->pos[dim_x] - 1].hn) && 
+       (distance[u->pos[dim_y] + 1][u->pos[dim_x] - 1].cost > u->cost + addlCost)){
+      distance[u->pos[dim_y] + 1][u->pos[dim_x] - 1].cost = u->cost + addlCost;
+      heap_decrease_key_no_replace(&h, distance[u->pos[dim_y] + 1][u->pos[dim_x] - 1].hn);
+    }
+    if((distance[u->pos[dim_y] + 1][u->pos[dim_x]   ].hn) &&
+       (distance[u->pos[dim_y] + 1][u->pos[dim_x]   ].cost > u->cost + addlCost)){
+      distance[u->pos[dim_y] + 1][u->pos[dim_x]   ].cost = u->cost + addlCost;
+      heap_decrease_key_no_replace(&h, distance[u->pos[dim_y] + 1][u->pos[dim_x]   ].hn);
+    }
+
+    if((distance[u->pos[dim_y] + 1][u->pos[dim_x] + 1].hn) && 
+       (distance[u->pos[dim_y] + 1][u->pos[dim_x] + 1].cost > u->cost + addlCost)){
+      distance[u->pos[dim_y] + 1][u->pos[dim_x] + 1].cost = u->cost + addlCost;
+      heap_decrease_key_no_replace(&h, distance[u->pos[dim_y] + 1][u->pos[dim_x] + 1].hn);
+      }
+  }
+
+  for(y = 0; y < DUNGEON_HEIGHT; y++){
+    for(x = 0; x < DUNGEON_WIDTH; x++){
+	d->tunnelPaths[y][x] = distance[y][x].cost;
+    }
+  }
+  heap_delete(&h);
 }

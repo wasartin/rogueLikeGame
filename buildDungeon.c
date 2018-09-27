@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "dungeon.h"
+#include "dungeonInfo.h"
 #include "buildDungeon.h"
 
 void initlizeDungeon(Dungeon *d){
@@ -28,7 +28,6 @@ void initlizeDungeon(Dungeon *d){
   }
 }
 
-
 void generateRooms(Dungeon *d){
   int qtyOfRooms = generateRange(MIN_NUMBER_OF_ROOMS, MAX_NUMBER_OF_ROOMS);
   d->numOfRooms = qtyOfRooms;
@@ -44,7 +43,6 @@ void generateRooms(Dungeon *d){
     d->rooms[i] = currRoom;
   }
 }
-
 
 int isInBounds(int row, int col, Room *r){
   //check if in the immutable section

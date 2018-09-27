@@ -1,7 +1,7 @@
 #ifndef BUILDDUNGEON_H
 # define BUILDDUNGEON_H
 
-#include "dungeon.h"
+#include "dungeonInfo.h"
 
 void initlizeDungeon(Dungeon *d);
 int isLegalPlace(int row, int col, Dungeon *d, Room *r);
