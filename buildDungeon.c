@@ -12,6 +12,7 @@ void initlizeDungeon(Dungeon *d){
   char rockCell = ' ';
   for(row = 0; row < DUNGEON_HEIGHT; row++){
     for(col = 0; col < DUNGEON_WIDTH; col++){
+      d->characterMap[row][col] = '\0';
       if(row == 0 || row == 20){
 	d->map[row][col] = topBorder;
 	d->hardnessMap[row][col] = MAX_HARDNESS;

@@ -6,7 +6,6 @@
 
 #include "heap.h"
 
-
 #define DUNGEON_WIDTH  80
 #define DUNGEON_HEIGHT 21
 #define MIN_ROOM_WIDTH 3
@@ -20,6 +19,11 @@
 
 #define TRUE  0
 #define FALSE 1 
+
+#define NPC_SMART 0x00000001
+#define NPC_TELEPATH 0x00000002
+#define NPC_TUNNEL 0x00000004
+#define NPC_ERRATIC 0x00000008
 
 typedef struct{
   uint8_t row;
@@ -40,17 +44,27 @@ typedef struct{
 }Room;
 
 typedef struct{
+  heap_node_t *hn;
   Coordinate location;
-}Player;
+  int alive;
+  int8_t characteristic;
+  Coordinate lastKnownPosOfPC;
+  int8_t speed;
+  int turn;
+  char representation;
+}Character;
 
 typedef struct{
   uint32_t numOfRooms;
   Room *rooms;
   char map[DUNGEON_HEIGHT][DUNGEON_WIDTH];
+  uint32_t numOfMonsters;
+  Character *monsters;
   uint8_t hardnessMap[DUNGEON_HEIGHT][DUNGEON_WIDTH];
   int8_t nonTunnelPaths[DUNGEON_HEIGHT][DUNGEON_WIDTH];
   int8_t tunnelPaths[DUNGEON_HEIGHT][DUNGEON_WIDTH];
-  Player pc;
+  char characterMap[DUNGEON_HEIGHT][DUNGEON_WIDTH];
+  Character pc;
 } Dungeon;
 
 typedef struct{

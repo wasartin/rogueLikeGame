@@ -4,7 +4,6 @@
 #include "pathFinding.h"
 #include "dungeonInfo.h"
 
-
 static int32_t comparator(const void *key, const void *with) {
   return ((dist_t *) key)->cost - ((dist_t *) with)->cost;
 }
