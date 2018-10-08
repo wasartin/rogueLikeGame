@@ -30,18 +30,18 @@ int isInSameRoom(Dungeon *d, Character *monster);
 void moveMonster(Dungeon *d, Character *monster);
 void moveCharacter(Dungeon *d, int row, int col, Character *curr);
 
-void placeCharacter(Dungeon *d, int row, int col){
-  d->characterMap[row][col] = '@';
-  d->pc.location.row = row;
-  d->pc.location.col = col;
+void placeCharacter(Dungeon *d, int row, int col, Character *curr){
+  d->characterMap[row][col] = curr->representation;
+  curr->location.row = row;
+  curr->location.col = col;
 }
 
 int main(int argc, char *argv[]){
   int seed = time(NULL);
   if(argc == 2 && argv[1][0] != '-') seed  = atoi(argv[1]);
-  printf("Seed used: %d\n", seed);
   srand(seed);
   Dungeon d;
+  printf("Seed used: %d\n", seed);
   int isLoad = FALSE;
   int isSave = FALSE;
   int numOfMonsters = 0;
@@ -82,14 +82,14 @@ int main(int argc, char *argv[]){
       d.pc.speed = generateRange(5, 21);
       d.pc.turn = 1000/ d.pc.speed;
       d.characterMap[row][col] = '@';
-      placeCharacter(&d, row, col);
+      placeCharacter(&d, row, col, &d.pc);
   }
 
   generateNormalPathMap(&d);
   generateTunnelPathMap(&d);
   
   printf("Map Created\n");
-  printMap(&d);
+  //printMap(&d);
   
   if(numOfMonsters == 0){
     numOfMonsters = d.numOfRooms;
@@ -98,6 +98,7 @@ int main(int argc, char *argv[]){
   d.monsters = (Character*)malloc(numOfMonsters * sizeof(Character));
   makeMonsters(&d);
   placeMonsters(&d);
+  printMap(&d);
   while(d.pc.alive == TRUE){
     runGame(&d);
     usleep(250000);
@@ -110,6 +111,7 @@ int main(int argc, char *argv[]){
   if(isSave == TRUE){
     saveGame(&d);
   }
+  printf("Seed used: %d\n", seed);
   return 0;
 }
 
@@ -148,6 +150,7 @@ void moveCharacter(Dungeon *d, int row, int col, Character *curr){
       d->map[curr->location.row][curr->location.col] = '#';
       d->hardnessMap[curr->location.row][curr->location.col] = 0;
     }
+    //if we arn't moving, this is bad
     if(d->characterMap[row][col] != '\0'){
       if(curr->representation != '@'){
 	if(d->pc.location.row == row && d->pc.location.col == col){
@@ -168,6 +171,8 @@ void moveCharacter(Dungeon *d, int row, int col, Character *curr){
     curr->location.row = row;
     curr->location.col = col;
     if(curr->representation == '@'){
+      // generateNormalPathMap(d);
+      //generateTunnelPathMap(d);
       printMap(d);
     }
   }
@@ -185,12 +190,14 @@ void createDungeon(Dungeon *d){
 void makeMonsters(Dungeon *d){
   int i;
   for(i = 0; i < d->numOfMonsters; i++){
+    /*
     if(i % 2 == 0){
       d->monsters[i].characteristic = 0x3;
     }else{
       d->monsters[i].characteristic = 0x7;
     }
-    //d->monsters[i].characteristic = rand() & 0xf;
+    */
+    d->monsters[i].characteristic = rand() & 0xf;
     d->monsters[i].speed = generateRange(5, 21);
     d->monsters[i].alive = TRUE;
     d->monsters[i].lastKnownPosOfPC.row = 0;
@@ -256,190 +263,101 @@ void placeMonsters(Dungeon *d){
   int i;
   for(i = 0; i < d->numOfMonsters; i++){
     int placed = 0;
-    if(!placed){
+    while(!placed){
       int randomRoom = generateRange(1, d->numOfRooms);
       Room currRoom = d->rooms[randomRoom];
       int randomRow = generateRange(0, currRoom.height);
       int randomCol = generateRange(0, currRoom.width);
       int selectedRow = currRoom.topLeftCoord.row + randomRow;
       int selectedCol = currRoom.topLeftCoord.col + randomCol;
-      if(d->characterMap[selectedRow][selectedCol] == '\0'){
-	d->characterMap[selectedRow][selectedCol] = d->monsters[i].representation;
-	d->monsters[i].location.row = selectedRow;
-	d->monsters[i].location.col = selectedCol;
-	placed = 1;
-      }
+      if(d->hardnessMap[selectedRow][selectedCol] != 255){
+	if(d->characterMap[selectedRow][selectedCol] == '\0'){
+	  d->characterMap[selectedRow][selectedCol] = d->monsters[i].representation;
+	  d->monsters[i].location.row = selectedRow;
+	  d->monsters[i].location.col = selectedCol;
+	  placed = 1;
+	}
+      } 
     }
   }
 }
 
 void moveMonster(Dungeon *d, Character *monster){
-  /*
- if(isInSameRoom(d, monster) == TRUE){
-    monster->lastKnownPosOfPC = d->pc.location;
-  }
-  */
-  int currRow, currCol, targetRow, targetCol, i, j;
-  currRow = monster->location.row;
-  currCol = monster->location.col;
-  int addRow, addCol, placed;
+  int currRow = monster->location.row;
+  int currCol = monster->location.col;
+  int targetRow, targetCol;
   int chance = rand() % 2;
-  switch(monster->representation){
-    //just line of sight
-  case '0':
-    if(monster->lastKnownPosOfPC.row == 0 && monster->lastKnownPosOfPC.col == 0){
-      int viableSpot = 0;
-      if(viableSpot){
-	addRow = rand() % 2;
-	addCol = rand() % 2;
-	currRow = monster->location.row;
-	currCol = monster->location.col;
-	if(d->hardnessMap[currRow + addRow][currCol + addCol] == MIN_HARDNESS){
-	  moveCharacter(d, currRow + addRow, currCol + addCol, monster);
-	  viableSpot = 1;
-	}
-	else if(d->hardnessMap[currRow + addRow][currCol - addCol] == MIN_HARDNESS){
-	  moveCharacter(d, currRow + addRow, currCol - addCol, monster);
-	  viableSpot = 1;
-	}
-	else if(d->hardnessMap[currRow - addRow][currCol + addCol] == MIN_HARDNESS){
-	  moveCharacter(d, currRow - addRow, currCol + addCol, monster);
-	  viableSpot = 1;
-	}
-	else if(d->hardnessMap[currRow - addRow][currCol - addCol] == MIN_HARDNESS){
-	  moveCharacter(d, currRow - addRow, currCol - addCol, monster);
-	  viableSpot = 1;
-	}
-      }
-    }
-    break;
-  case '1': //0001
-    //intel but only line of sight
-    /*
-    if(d->monsters[selected].lastKnownPosOfPC.row != 0){
-      if(d->monsters[selected].lastKnownPosOfPC.row < d->monsters[selected].location.row){
-	
-      }
-    }
-    */
-    break;
-  case '2': //0010
-    //a telepath
-    //always knows where player is, but not short path
-    if(monster->lastKnownPosOfPC.row > currRow && d->hardnessMap[currRow + 1][currCol] == MIN_HARDNESS){
-      targetRow = currRow + 1;
-    }
-    else if(monster->lastKnownPosOfPC.row < currRow && d->hardnessMap[currRow - 1][currCol] == MIN_HARDNESS){
-      targetRow = currRow - 1;
-    }
-    else if(monster->lastKnownPosOfPC.col < currCol && d->hardnessMap[currRow][currCol - 1] == MIN_HARDNESS){
-      targetCol = currCol - 1;
-    }
-    else if(monster->lastKnownPosOfPC.col > currCol && d->hardnessMap[currRow][currCol + 1] == MIN_HARDNESS){
-      targetCol = currCol + 1;
-    }
-    moveCharacter(d, targetRow, targetCol, monster);
-    break;
-  case '3': //0011
-    //tele and smart (imp)
-    currRow = monster->location.row;
-    currCol = monster->location.col;
-    int smallestValue = d->nonTunnelPaths[currRow][currCol];
-    targetRow = currRow;
-    targetCol = currCol;
-    for(i = -1; i <= 1; i++){
-      for(j = -1; j<= 1; j++){
-	if(d->hardnessMap[currRow + i][currCol + j] == MIN_HARDNESS){
-	  int tmpValue = d->nonTunnelPaths[currRow + i][currCol + j];
-	  if(tmpValue < smallestValue){
-	    smallestValue = tmpValue;
-	    targetRow = currRow + i;
-	    targetCol = currCol + j;
-	  }
-	}
-      }
-    }
-    moveCharacter(d, targetRow, targetCol, monster);
-    break;
-  case '4': //0100
-    //telepath
-    break;
-  case '5': //0101
-    //tunnel and smart
-    break;
-  case '6': //0110
-    //tele and tunnel
-    break;
-  case '7': //0111
-    //tunnel, tele, and intelligent (imp)
-    currRow = monster->location.row;
-    currCol = monster->location.col;
-    int smallest = d->tunnelPaths[currRow][currCol];
-    for(i = -1; i <= 1; i++){
-      for(j = -1; j<= 1; j++){
-	if(d->hardnessMap[currRow + i][currCol + j] != MAX_HARDNESS){
-	  int tmpValue = d->tunnelPaths[currRow + i][currCol + j];
-	  if(tmpValue < smallest){
-	    smallest = tmpValue;
-	    targetRow = currRow + i;
-	    targetCol = currCol + j;
-	  }
-	}
-      }
-    }
-    moveCharacter(d, targetRow, targetCol, monster);
-    break;
-  case '8': //1000
-    if(chance == 1 && monster->lastKnownPosOfPC.row != 0){
-      if(monster->lastKnownPosOfPC.row > currRow && d->hardnessMap[currRow + 1][currCol] == MIN_HARDNESS){
-	targetRow = currRow + 1;
-      }
-      else if(monster->lastKnownPosOfPC.row < currRow && d->hardnessMap[currRow - 1][currCol] == MIN_HARDNESS){
-	targetRow = currRow - 1;
-      }
-      else if(monster->lastKnownPosOfPC.col < currCol && d->hardnessMap[currRow][currCol - 1] == MIN_HARDNESS){
-	targetCol = currCol - 1;
-      }
-      else if(monster->lastKnownPosOfPC.col > currCol && d->hardnessMap[currRow][currCol + 1] == MIN_HARDNESS){
-	targetCol = currCol + 1;
-      }
-    }else{
-      placed = 0;
-      if(placed){
-	addRow = generateRange(-1, 2);
-	addCol = generateRange(-1, 2);
-	if(d->hardnessMap[currRow + addRow][currCol + addCol] == MIN_HARDNESS){
-	  placed = 1;
-	  targetRow = currRow + addRow;
-	  targetCol = currRow + addCol;
-	}
-      }
-    }
-  moveCharacter(d, targetRow, targetCol, monster);
-    break;
-  case '9': //1001
-    //erratic but smart
-    break;
-  case 'a': //1010
-    //tunnel and telepath
-    break;
-  case 'b': //1011
-    //erratic, telepath and smart
-    break;
-  case 'c': //1100
-    //erratic tunnler
-    break;
-  case 'd': //1101
-    //erratic, tunnel, smart
-    break;
-  case 'e': //1110
-    //erratic, tunnel, telepath
-    break;
-  case 'f': //1111
-    //erratic, tunnel, telepath, smart
-    break;
+  if((monster->characteristic & NPC_TELEPATH) || (isInSameRoom(d, monster) == TRUE)){
+    monster->lastKnownPosOfPC.row = d->pc.location.row;
+    monster->lastKnownPosOfPC.col = d->pc.location.col;
   }
-  
+
+  Coordinate neighbors[9];
+  int i, j, neighborLength;
+  neighborLength = 0;
+  for(i = -1; i < 2; i++){
+    for(j = -1; j < 2; j++){
+      //if  within bounds, throw it into the neighbors
+      if((currRow + i > 0 && currRow + i < 21) && (currCol + j > 0 && currCol + j < 80)){
+	if((monster->characteristic & NPC_TUNNEL) && d->hardnessMap[currRow + i][currCol + j] != 255){
+	  //allow all round
+	  neighbors[neighborLength].row = currRow + i;
+	  neighbors[neighborLength].col = currCol + j;
+	  neighborLength++;
+	}else{
+	  if(d->hardnessMap[currRow + i][currCol + j] == MIN_HARDNESS){
+	    neighbors[neighborLength].row = currRow + i;
+	    neighbors[neighborLength].col = currCol + j;
+	    neighborLength++;
+	  }
+	} 
+      }
+    }
+  }
+
+  if((monster->characteristic & NPC_ERRATIC) && (chance == 0)){
+    chance = 0;
+  }else {
+    chance = 1;
+  }
+
+  if((monster->characteristic & NPC_SMART) && (monster->lastKnownPosOfPC.row != 0)){
+    int smallestValue, tmpValue;
+    if(monster->characteristic & NPC_TUNNEL){
+      int smallestValue =  85;
+      for(i = 0; i < neighborLength; i++){
+	tmpValue = d->tunnelPaths[neighbors[i].row][neighbors[i].col];
+	if(tmpValue < smallestValue){
+	  smallestValue = tmpValue;
+	  targetRow = neighbors[i].row;
+	  targetCol = neighbors[i].col;
+	}
+      }
+    }else {
+      smallestValue = 85;
+      for(i = 0; i < neighborLength; i++){
+	tmpValue = d->nonTunnelPaths[neighbors[i].row][neighbors[i].col];
+	if(tmpValue < smallestValue){
+	  smallestValue = tmpValue;
+	  targetRow = neighbors[i].row;
+	  targetCol = neighbors[i].col;
+	}
+      }
+    }
+  }else {
+    //targetRow = currRow;
+    //targetCol = currCol;
+    chance = 0;
+  }
+
+  if(chance == 0){
+    //move erratic inside of neighbors
+    int num = generateRange(0, neighborLength);
+    targetRow = neighbors[num].row;
+    targetCol = neighbors[num].col;
+    
+  }
+  moveCharacter(d, targetRow, targetCol, monster);
 }
 
 
@@ -622,6 +540,7 @@ void loadGame(Dungeon *d){
   }
 
   d->pc.representation = '@';
-  placeCharacter(d, rowOfPlayer, colOfPlayer);
+  Character curr = d->pc;
+  placeCharacter(d, rowOfPlayer, colOfPlayer, &curr);
   fclose(fp);
 }
