@@ -12,10 +12,10 @@ void generateNormalPathMap(Dungeon *d){
   //make heap
   heap_t h;
   uint32_t x, y;
-  dist_t distance[DUNGEON_HEIGHT][DUNGEON_WIDTH], *u;
+  static dist_t distance[DUNGEON_HEIGHT][DUNGEON_WIDTH], *u;
   static int initilized = FALSE;
 
-   if(initilized == FALSE){
+  if(initilized == FALSE){
     for(y = 0; y < DUNGEON_HEIGHT; y++){
       for(x = 0; x < DUNGEON_WIDTH; x++){
 	distance[y][x].pos[1] = y;
@@ -23,13 +23,14 @@ void generateNormalPathMap(Dungeon *d){
       }
     }
     initilized = TRUE;
-  } for(y = 0; y < DUNGEON_HEIGHT; y++){
+  } 
+  for(y = 0; y < DUNGEON_HEIGHT; y++){
     for(x = 0; x < DUNGEON_WIDTH; x++){
       distance[y][x].pos[dim_y] = y;
       distance[y][x].pos[dim_x] = x;
     }
   }
-
+  
   //mark all of the dungeon at inifinty
   for(y = 0; y < DUNGEON_HEIGHT; y++){
     for(x = 0; x < DUNGEON_WIDTH; x++){
@@ -40,7 +41,7 @@ void generateNormalPathMap(Dungeon *d){
       }
     }
   }
-
+  
   //init
   heap_init(&h, comparator, NULL);
   
@@ -115,7 +116,7 @@ void generateTunnelPathMap(Dungeon *d){
     //make heap
   heap_t h;
   uint32_t x, y;
-  dist_t distance[DUNGEON_HEIGHT][DUNGEON_WIDTH], *u;
+  static dist_t distance[DUNGEON_HEIGHT][DUNGEON_WIDTH], *u;
   static int initilized = FALSE;
 
   //since this will run multiply time, might as well save some time and see if it has been init yet.

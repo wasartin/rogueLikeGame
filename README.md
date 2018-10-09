@@ -4,4 +4,4 @@ A rogueLikeGame with random dungeon generation, saving and loading functionality
   with 16 different kinds of monsters. All written in C
   
 current bugs:
-  -can't update pathFinding with player moves.
+	-After a certain time period some monsters will just stop moving altogether. 

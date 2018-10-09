@@ -25,11 +25,6 @@ void createDungeon(Dungeon *d);
 void saveGame(Dungeon *d);
 void loadGame(Dungeon *d);
 void runGame(Dungeon *d);
-void makeMonsters(Dungeon *d);
-void placeMonsters(Dungeon *d);
-int isInSameRoom(Dungeon *d, Character *monster);
-void moveMonster(Dungeon *d, Character *monster);
-void moveCharacter(Dungeon *d, int row, int col, Character *curr);
 
 void placeCharacter(Dungeon *d, int row, int col, Character *curr){
   d->characterMap[row][col] = curr->representation;
@@ -137,6 +132,8 @@ void runGame(Dungeon *d){
       moveCharacter(d, d->pc.location.row, d->pc.location.col, &d->pc);
       printMap(d);
       //update distance maps
+      generateNormalPathMap(d);
+      generateTunnelPathMap(d);
     }else{
       //a monster, so move it
       moveMonster(d, curr);
