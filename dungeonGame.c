@@ -6,6 +6,7 @@
 #include <endian.h>
 #include <inttypes.h>
 #include <unistd.h>
+#include <ncurses.h>
 
 #include "dungeonInfo.h"
 #include "buildDungeon.h"
@@ -18,13 +19,13 @@ const char playerCell = '@';
 const char rockCell = ' ';
 
 void printMap(Dungeon *d);
-void printPaths(Dungeon *d);
-void printTunnelPaths(Dungeon *d);
+void newPrintMap(Dungeon *d);
 void srand(unsigned seed);
 void createDungeon(Dungeon *d);
 void saveGame(Dungeon *d);
 void loadGame(Dungeon *d);
-void runGame(Dungeon *d);
+void runGame(Dungeon *d, char userInput);
+void action(char action, int *addRow, int *addCol);
 
 void placeCharacter(Dungeon *d, int row, int col, Character *curr){
   d->characterMap[row][col] = curr->representation;
@@ -38,14 +39,14 @@ int main(int argc, char *argv[]){
   srand(seed);
   Dungeon d;
   printf("Seed used: %d\n", seed);
-  int isLoad = FALSE;
-  int isSave = FALSE;
+  int isLoad = FAILURE;
+  int isSave = FAILURE;
   int numOfMonsters = 0;
 
   if(argc > 2){
     if((argv[1][2] == 'l' && argv[2][2] == 's') || (argv[1][2] == 's' && argv[2][2] == 'l')){
       printf("User selected to both save and load\n");
-      isLoad = TRUE;
+      isLoad = SUCCESS;
     }
     //check for num of monsters
     else if(argv[1][2] == 'n'){
@@ -56,36 +57,36 @@ int main(int argc, char *argv[]){
   if(argc == 2 && argv[1][0] == '-'){
     if(argv[1][2] == 's'){
       printf("User selected save\n");
-      isSave = TRUE;
+      isSave = SUCCESS;
     }
     else if(argv[1][2] == 'l'){
       printf("User selected load\n");
-      isLoad = TRUE;
+      isLoad = SUCCESS;
     }
   }
 
-  if(isLoad == TRUE){
+  if(isLoad == SUCCESS){
     initlizeDungeon(&d);
     loadGame(&d);
   } else{
-      createDungeon(&d);
-      int row = d.rooms[0].topLeftCoord.row;
-      int col = d.rooms[0].topLeftCoord.col;
-      d.pc.alive = TRUE;
-      d.pc.representation = playerCell;
-      d.pc.location.row = row;
-      d.pc.location.col = col;
-      d.pc.speed = generateRange(5, 21);
-      d.pc.turn = 1000/ d.pc.speed;
-      d.characterMap[row][col] = '@';
-      placeCharacter(&d, row, col, &d.pc);
+  STAIRS:
+    createDungeon(&d);
+    int row = d.rooms[0].topLeftCoord.row;
+    int col = d.rooms[0].topLeftCoord.col;
+    d.pc.alive = SUCCESS;
+    d.pc.representation = playerCell;
+    d.pc.location.row = row;
+    d.pc.location.col = col;
+    d.pc.speed = generateRange(5, 21);
+    d.pc.turn = 1000/ d.pc.speed;
+    d.characterMap[row][col] = '@';
+    placeCharacter(&d, row, col, &d.pc);
   }
 
   generateNormalPathMap(&d);
   generateTunnelPathMap(&d);
   
   printf("Map Created\n");
-  //printMap(&d);
   
   if(numOfMonsters == 0){
     numOfMonsters = d.numOfRooms;
@@ -94,20 +95,109 @@ int main(int argc, char *argv[]){
   d.monsters = (Character*)malloc(numOfMonsters * sizeof(Character));
   makeMonsters(&d);
   placeMonsters(&d);
-  printMap(&d);
-  while(d.pc.alive == TRUE){
-    runGame(&d);
-    usleep(250000);
+  
+  //clears screen and allocates memory for screen
+  WINDOW *base = initscr();
+  raw();
+  noecho();
+  cbreak();
+  curs_set(0);
+  keypad(base, TRUE);
+
+  newPrintMap(&d);
+  while(d.pc.alive == 0 && d.numOfMonsters != 0){
+    char ch = getch();
+    if((ch == '>' && d.map[d.pc.location.row][d.pc.location.col] == '>') ||
+       (ch == '<' && d.map[d.pc.location.row][d.pc.location.col] == '<')){
+      free(d.rooms);
+      free(d.monsters);
+      goto STAIRS;
+    }
+    else if(ch == 'm'){
+      int i;
+      int screenLimit = 10;
+      if(d.numOfMonsters < 10){
+	screenLimit = d.numOfMonsters;
+      }
+      int shift = 0;
+      int inMonsterScreen = 0;
+      clear();
+      while(inMonsterScreen == 0){
+	for(i = 0; i < screenLimit; i++){
+	  if((i + shift < d.numOfMonsters) && (i + shift >= 0)){
+	    char currMon = d.monsters[i + shift].representation;
+	    int yDifference = d.pc.location.row - d.monsters[i + shift].location.row;
+	    int xDifference = d.pc.location.col - d.monsters[i + shift].location.col;
+	    char first[6];
+	    char second[5];
+	    if(yDifference < 0){
+	      yDifference = yDifference * -1;
+	      strcpy(first, "south");
+	    }
+	    else{
+	      strcpy(first, "north");
+	    }
+	    if(xDifference < 0){
+	      xDifference = xDifference * -1;
+	      strcpy(second, "east");
+	    }
+	    else{
+	      strcpy(second, "west");
+	    }
+	    //print
+	    //put all of the strings together/
+	    mvprintw(i + 1, DUNGEON_WIDTH / 5, "Monster: %c is ", currMon);
+	    printw("%d ", yDifference);
+	    printw("%s and ", first);
+	    printw("%d ", xDifference);
+	    printw("%s.\n", second);
+	  }	
+	}
+	int32_t currCommand = getch();
+	switch(currCommand){
+	case KEY_UP:
+	  if(shift != 0){
+	    shift--;
+	  }
+	  break;
+	case KEY_DOWN:
+	  if(shift + screenLimit < d.numOfMonsters){
+	    shift++;
+	  }
+	  break;
+	case 27:
+	  inMonsterScreen = 1;
+	  break;
+	default: 
+	  break;
+	}
+	refresh();
+      } 
+    }
+    else if(ch == 'Q'){
+      break;
+    }else{
+      d.runs++;
+      runGame(&d, ch); 
+    }
+
   }
-  printMap(&d);
+
+  endwin();
   printf("GAME OVER\n");
+  if(d.numOfMonsters == 0){
+    printf("You Win!\n");
+  }else {
+    printf("If you want to win next time just remember you don't have to be perfect... \n");
+    printf("But you need to be a lot better than that.\n");
+  }
   free(d.rooms);
   free(d.monsters);
   
-  if(isSave == TRUE){
+
+  if(isSave == SUCCESS){
     saveGame(&d);
   }
-  printf("Seed used: %d\n", seed);
   return 0;
 }
 
@@ -115,7 +205,66 @@ static int32_t moveComparator(const void *key, const void *with){
   return((Character *) key)->turn - ((Character *) with)->turn;
 }
 
-void runGame(Dungeon *d){
+void action(char action, int *addRow, int *addCol){
+  switch(action){
+    //move upper left
+  case '7':
+  case 'y':
+    *addRow = -1;
+    *addCol = -1;
+    break;
+    //move up
+  case '8':
+  case 'k':
+    *addRow = -1;
+    *addCol = 0;
+    break;
+    //move upper right
+  case '9':
+  case 'u':
+    *addRow = -1;
+    *addCol = 1;
+    break;
+    //move right
+  case '6':
+  case 'l':
+    *addRow = 0;
+    *addCol = 1;
+    break;
+    //lower right
+  case '3':
+  case 'n':
+    *addRow = 1;
+    *addCol = 1;
+    break;
+    //move down
+  case '2':
+  case 'j':
+    *addRow = 1;
+    *addCol = 0;
+    break;
+    //lower left
+  case '1':
+  case 'b':
+    *addRow = 1;
+    *addCol = -1;
+    break;
+    //left
+  case '4':
+  case 'h':
+    *addRow = 0;
+    *addCol = -1;
+    break;
+    //down stairs
+    //rest
+  case '5':
+    break;
+  default:
+    break;
+  }
+}
+
+void runGame(Dungeon *d, char userInput){
   heap_t h;
   heap_init(&h, moveComparator, NULL);
   //fill heap
@@ -124,33 +273,39 @@ void runGame(Dungeon *d){
   for(i = 0; i < d->numOfMonsters; i++){
     d->monsters[i].hn = heap_insert(&h, &d->monsters[i]);
   }
-
   Character *curr;
   while((curr = heap_remove_min(&h))){
     curr->hn = NULL;
     if(curr->representation == '@'){   
-      moveCharacter(d, d->pc.location.row, d->pc.location.col, &d->pc);
-      printMap(d);
-      //update distance maps
+      int addRow = 0;
+      int addCol = 0;
+      action(userInput, &addRow, &addCol);
+      if((d->pc.location.row + addRow > 0 && d->pc.location.row + addRow < 20) && 
+	 (d->pc.location.col + addCol > 0 && d->pc.location.col + addCol < 79)){
+	if(d->hardnessMap[d->pc.location.row + addRow][d->pc.location.col + addCol] == MIN_HARDNESS){
+	  moveCharacter(d, d->pc.location.row + addRow, d->pc.location.col + addCol, &d->pc);	  
+	}
+      }
+      newPrintMap(d);
       generateNormalPathMap(d);
       generateTunnelPathMap(d);
     }else{
-      //a monster, so move it
       moveMonster(d, curr);
     }
-
-
   }
   heap_delete(&h);
 }
 
 void createDungeon(Dungeon *d){
   initlizeDungeon(d);
+  d->runs = 0;
   d->rooms = (Room*)malloc(MAX_NUMBER_OF_ROOMS * sizeof(Room));
   generateRooms(d);
   placeRooms(d);
   setSortedRoomArray(d);
   connectRooms(d);
+  generateStairs(d, d->rooms[0].topLeftCoord.row, d->rooms[0].topLeftCoord.col, 0);
+  generateStairs(d, d->rooms[d->numOfRooms - 1].topLeftCoord.row, d->rooms[d->numOfRooms - 1].topLeftCoord.col, 1);
 }
 
 void printMap(Dungeon *d){
@@ -167,40 +322,21 @@ void printMap(Dungeon *d){
   }
 }
 
-void printPaths(Dungeon *d){
-  uint8_t x, y;
-  for( y = 0; y < DUNGEON_HEIGHT; y++){
-    for(x = 0; x < DUNGEON_WIDTH; x++){
-      if(y == d->pc.location.row && x == d->pc.location.col){
-	printf("@");
-      }else {
-	if(d->hardnessMap[y][x] != MIN_HARDNESS){
-	  printf(" ");
-	}else{
-	  printf("%d", d->nonTunnelPaths[y][x] % 10);	
-	}
+void newPrintMap(Dungeon *d){
+  clear();
+  int i, j;
+  for(i = 0; i < DUNGEON_HEIGHT; i++){
+    for(j = 0; j < DUNGEON_WIDTH; j++){
+      char temp;
+      if(d->characterMap[i][j] != '\0'){
+	temp = d->characterMap[i][j];
+      }else{
+	temp = d->map[i][j];
       }
+      mvaddch(i, j, temp);
     }
-    printf("\n");
   }
-}
-
-void printTunnelPaths(Dungeon *d){
-  uint8_t x, y;
-  for( y = 0; y < DUNGEON_HEIGHT; y++){
-    for(x = 0; x < DUNGEON_WIDTH; x++){
-      if(y == d->pc.location.row && x == d->pc.location.col){
-	printf("@");
-      }else {
-	if(d->hardnessMap[y][x] == MAX_HARDNESS){
-	  printf(" ");
-	}else{
-	  printf("%d", d->tunnelPaths[y][x] % 10);	
-	}
-      }
-    }
-    printf("\n");
-  }
+  refresh();
 }
 
 void saveGame(Dungeon *d){

@@ -1,0 +1,220 @@
+8/24
+	just going to write down all the requirements and see where that gets me.
+	-have some method ideas like 'isLegalPlace(), void placeRoom().
+	-Trying to start small, working on how to hold the rooms. I think I will have a struct for the point which has a x and a y,
+	and a struct for room that would be the actual room, and they would hold point1 and point 2 which 
+	contains the dagnals spots of a room.
+
+	- 1.02 requires a dynamically allocated room array, not sure what that means yet.
+	- 1.03 requires that rock cells have hardness, not sure how to do this yet.
+8/26
+	-No idea what the heck to do... just going to try and figure out the rooms. 
+	-Dungeon was orignally just an array, but I am turning it into a struct.
+
+8/27
+	-Just removing enums for now, don't know what I am doing.
+	-had a memeber of the struct Dungeon called numOfRooms, then i use that number in another member called
+	room rooms[numOfRooms]. It isn't working, i think becasue it is never initilized, so I'll use one of my 
+	const static int value MAX_NUMBER_OF_ROOMS to help initilize the array of rooms
+	-changing the structure of struct, to use typedef. 
+	-Just working on generating the rooms, and printing out the number of rooms.
+
+	-Just got the number of rooms to print, so I am correctly accessing my struct, but every time I run it 
+	the 'random number'is just the same number over and over again.
+	Found this link, https://www.geeksforgeeks.org/rand-and-srand-in-ccpp/ that shows how to use srand and the
+	time to make an actual random number
+	-So rooms work, I think I will have a method called placeRooms(dungeon) which will pick random positions, 
+	then will load that position into a method
+	      called isLegalPlace(room, dungeon, row, col) that first checks if the placement is in the bounds of 
+	      the board, then checks if the placement
+	      will be on top of or adjacent to any other room. Going write everything out.
+	      -just made a method called isInBounds() and isNotAdjaentToARoom() method to make isLegalPlace() a smaller method
+	-Also, this class is getting to be too long. will need to figure out how to use more than one file.
+8/28
+	-Almost finished with placeRoom. 
+	     Awesome news, rooms are being made and placed in dungeon... but they seem to be overlapping.
+	     The number of rooms generated does not match the rooms shows, and some are right next to check 
+	      other. So I am pretty sure they are overlapping. Will begin debugging now.
+	     -RESOLVED- the issue was is void placeRoom() was calling boolean isLegalPlace(...) which called 
+	        both boolean isInBounds(...) and boolean isNotAdjacentToARoom(...). I thouhgt i could just call
+	        isInBounds(...) and if that returned FALSE, then the outter methodisLegalPlace(...) would return 
+	        false too. but this is not the case. so i did this if(isInBounds(...) == FALSE) return FALSE;
+	             this resolved the situation.
+	    - Right now I have the immutable space as the border. IDK if there should be a border THEN an immutable 
+	           space. I will ask.
+	    - All of my rooms seem pretty large too.
+	-Now time to connect all of the rooms. I have no idea how to do this.
+	     -Teacher said to use Euclidean distance. (X0, Y0) and (X1, Y1). draw from Y0 to X1 then X0 to Y1. 
+	     -abs[(x1 - x0)/(x1-xo)] to help increment
+	     -for(pos = start; pos != end; pos += increment) drawCorridor;
+
+8/29
+	-changed the way my seed operates for my srand. The teacher recomended taking an argument for debugging,
+	     and also printing out the one used.
+	-Going to sort the array inside the Dungeon struct, so that connecting them will be easier. (I think)
+	-Keep track of seed 1535594805, makes me thing about changing assortion of rooms. Should sort by 
+	      point 2 to point one. or just by points one. like make a method compare points. if one is 
+	      higher left than another, that one goes first. keep that idea in the TODO
+
+	-Stuck in infinte loop inside of connectRooms. I have it trying to connect Room1.point2 with Room2.point1;
+	     Going to put an attempt limit inside the while loop. To see where I am at.
+	     -Really wanna select one room then select the 2nd room randomly and connect those. this sorted this is eh
+		-Also, could pick which two points to connect to randomly too
+
+	left off with seed 1535595011
+
+8/30
+	-I just finished it. My algorithm for connected rooms was:
+	     1.) for each room
+		a.) select curr room pt2 at current Coordinate and the next room's pt1 as destination Coordinate.
+	        b.) While currCoord != destination
+		     1- increment in the x or y direction.
+		     2- draw if it is allowed.
+	-Going to try the two bad seeds I encountered earlier, and if they work I am going to try to make
+	     connectRooms(...) concise...
+	     -Alright both bad seeds work just fine. 
+	-Going to reconstructure the code. Right now main is called everything, like calling setDungeon(...)
+	     generateRooms(...), then placeRooms(...), setSortedArray(...), then connectRooms(...) then print map.
+	     I think it would be better to make a function called initilizeDungeon(...) that called all that stuff.
+	     Then it might be esier to do the save/load functions later. As well as making the program easier to
+	     understand.
+	- It's looking better, but i would like to make the connectRoom method better. At least more random
+
+8/31
+	-I think that Corridors should probably have a struct. They would have both points just like rooms. Beyond that, 
+	      I don't know what else. But i think making them a struct will help me with refactoring later.
+	-Going to try to figure out how to dynamically allocate my room array
+	-The room array is now dynamically allocated, and hardness is finished as well.
+
+
+
+BAD SEEDS:
+	1535595854 : segmentation fault (Fixed now)
+	1535596201 : 9 rooms, a total mess, and only connected two rooms (Fixed now)
+
+	
+8/31
+	-Need to be able to load (read) and save (write) the dungeon.
+	     what happens when someone uses both switches?
+9/2
+	-Trying to figure out how to make a directory in C, in Linux
+	-Working on just making a file, reading, and writing. chapter 7.5 of The C ANSI Book has something on
+	files, as well as some of chapter 8. Going to read those.
+9/4
+	-Working on writing a binary file
+9/5
+	-Finished the method saveGame(...), but I don't have anyway to really test this so I will need to finish loadGame(...)
+		After loadGame() is done, Then I can see if it works wit the files the teacher is providing, then I can
+		see if saveGame() works.
+9/7
+	-Teacher covered some file i/o stuff on 9/6. He talked about how to read the save or load switches, so I will work on that
+	     now. Since I can't test save and load yet, I will just have it print out what occurs. ex: "User selected Save" etc...
+	    -Got save and load to be reached. Will not just try to finish my load() so I can work with the Teacher's test files
+9/11
+	-Working on debugging whatever is wrong with loading. had to google how to use gdb, Used this website
+		https://www.thegeekstuff.com/2010/03/debug-c-program-using-gdb/
+		-When I access the marker I get weird symbols each time, and the result is always different.
+	-Also I want to remove my point2 in my room struct. Don't think I need it. Hopefully I will have time to do that.
+
+9/12
+	-Stuck on saving. I noticed that the saved file is one byte bigger than the file i want to save. 
+	       so i am writing something wrong.
+	       -RESOLVED. forgot about the null byte at the end of the RLG327-F2018
+	-I am getting random corridors, going to go into gdb
+	     -The bug was in my hardnessMap. I had a range of 0-254 instead of 1-254. SO I added one to the bottom 
+	     range. Saving and loading totally works.
+	-Just finished all of my deciding stuff for decinding what to do in the main. Followed the teacher's code
+	     of case and switch with his aciton enums, but i couldn't figure out how to make my dungeon and save it.
+	     in a concise way, so I just did if/else stuff.
+	-Totally done. 
+	-
+9/16
+	-Splitting the file into multiple files. It is getting to be too much to scroll through. Plus it would be better to have
+	     a more modular design
+	-Working on getting the Makefile correct. Looked at the teacher's it was a nightmare. No way I can dechipher that
+
+9/17
+	-Done breaking the files up/
+	-Refactored how I connect rooms. Looks better now.
+	-Removed some unneeded things. Like have the struct room have point two. Don't really need that. Removed it and renamed
+	     point.one to just a coordinate with the name topLeftCoord.
+	-Looking and reading his dijkstra's corridor to try to understand and apply that to my path finding.
+9/18
+	-Trying to make path finding now. need a normal one and one for monsters that can tunnel.
+9/21
+	-Trying to copy as much of his Corridor code, and understand it.
+9/22
+	-Printing is a mess. Most of the nonTunnelPath is just 0 with random numbers
+	-Had wrong map being initilized. going to fix now.
+9/23
+	-No idea what is going on. just printing 5 everywhere. like every loc is at the value 5. I felt
+	     like i was closer yesterday. Not even srue what i did. need to make small deliberate steps so
+	     i don't do this again
+	     -Ok, so I am comparing the next pos to just dist->cost. I should compare it to the non-altered pos.
+		-ok i don't know what is going on.
+		-I think this is my problem. I am comparing the wrong things. I misread part of his corridor
+	          I have distance[d->pc.location.row][d->pc.location.col], for my first section. the arg
+	          SHOULD be the the temp dist i made
+	      -Ok, so dist_t *dist = heap_remove_min(&h) is my issue. nothing is being returned I think
+	      -BACK to printing mostly 5's. have a few other things like 0 and 1 near the player.
+	-I have numbers 1-6, but they only go out of bounds of the room. I THINK that the corridor code the teacher wrote
+	     doesn't exactly translate to the nonTunnelMap version. So I will need to find a way to ensrue that
+	     only things inside of the rooms and corridors go into the heap
+	     -Ok, i add everything to the heap. i will check hardness then do it.
+	     -I think that my issue is my comparator, b/c it's just a copy of the corridor one. I need it to be the 
+	      two things I am actually comparing. idk how though. b/c they are inside of the dungeon.
+	     -OK so my 5's are actually 255. because i set everyything just to max hardness. So will have to fix that
+9/24
+	-Went to help room, tried to refactor everything I made, still no results. This assignment has taken me forever
+	    -My code is so similar to what the teacher provided for his corridor algorithm. I don't get what I am doing 
+	    wrong.
+9/25
+	-Just finsihed the non Tunneling path. I had to make my method static. That was it. I don't know how that was 
+	     causing negative numbers (maybe b/c my comparator method was static), but IDK and IDC. That part is finally
+	     done. Time to start the tunneling monster path.
+	-Totally forgot to add hardness into consideration for tunneling monsters. 
+	-Not working. I am off by one in a couple of spots for the tunneling paths.
+		-Got it. I had it where in the begingin of the while loop I assign u->cost = hardness[y][x] / 85 + 1, I
+		changed it where i just have int addlCost = hardness[y][x] / 85 + 1, then when I compare i use 
+		u->cost + addlCost, and this resolved the situation. I don't know why though. So i am worried that there
+		may be something wrong in my code.
+	-Totally working now
+9/29
+	-Starting now. Going to try to just move the character first.
+9/30
+	-Making all of the monsters
+10/1
+	-Made monsters incorectly, starting that over to better match the requirments of the assignment
+	-Need to make player and monster same thing so that I can put them into the priority queue.
+	-Weird seed 1538414325. reworte corridor as room cell. will need to fix.
+10/2
+	-Working on monsters again
+	-Fixed the seed 1538414325, just followed the teacher's style of render Dungeon.
+	-Added nummon switch. It works, right now I have it where no monsters spawns in the same room where the player
+	    is, just doesn't seem fair.
+10/3
+	-Have a bug when I load, the first room always becomes just corridors
+	-Only going to impelement two monsters,the ones required for the assignment
+	-My --nummon switch won't accept an absurd number, will have to look into
+10/8
+	-Finally got all 16 monsters fully implemented, but I think I could still do some work on them.
+	-Broke monsters into their own file
+10/9
+	-Fixed the bug I had where I couldn't update the distance maps
+	-Starting the assignment now
+10/10
+	-Got ncurses to display my map
+	-got the player to move
+	-I want the game to declare win/lose
+	-also starting the monster list. I think I will just make a new window over my current window. 
+10/16
+	-Found bug in moveMonster. Sometimes the column would be in teh 1000's. Turns out I was using an uninitilized variable.
+	-Working on staris right now.
+	     -Stairs are done
+10/17
+	-Scrolling is done.
+	-added quit.
+
+
+Known Bugs:
+	-After a certain number of turns, certain monsters will just stop moving. Not really a bug, but something I want to fix.

@@ -17,8 +17,8 @@
 #define MIN_HARDNESS 0
 #define MAX_HARDNESS 255
 
-#define TRUE  0
-#define FALSE 1 
+#define SUCCESS 0
+#define FAILURE 1
 
 #define NPC_SMART 0x00000001
 #define NPC_TELEPATH 0x00000002
@@ -34,7 +34,7 @@ typedef struct{
   1 - - - -
   - - - - -
   - - - - -
-  - - - - 2
+  - - - - -
  */
 typedef struct{
   Coordinate topLeftCoord;
@@ -65,6 +65,7 @@ typedef struct{
   int8_t tunnelPaths[DUNGEON_HEIGHT][DUNGEON_WIDTH];
   char characterMap[DUNGEON_HEIGHT][DUNGEON_WIDTH];
   Character pc;
+  int runs;
 } Dungeon;
 
 typedef struct{

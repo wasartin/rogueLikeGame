@@ -40,18 +40,18 @@ void generateRooms(Dungeon *d){
     Room currRoom;
     currRoom.width = columns;
     currRoom.height = rows;
-    currRoom.isConnected = FALSE;
+    currRoom.isConnected = FAILURE;
     d->rooms[i] = currRoom;
   }
 }
 
 int isInBounds(int row, int col, Room *r){
   //check if in the immutable section
-  if(row == 0 || row == 79 || col == 0 || col == 20) return FALSE;
+  if(row == 0 || row == 79 || col == 0 || col == 20) return FAILURE;
   //check bounds
-  if(row + r->height > 19) return FALSE;
-  if(col + r->width > 78) return FALSE;
-  return TRUE;
+  if(row + r->height > 19) return FAILURE;
+  if(col + r->width > 78) return FAILURE;
+  return SUCCESS;
 }
 
 int checkAdjaceny(int row, int col,  Dungeon *d, char cellToLookFor){
@@ -65,17 +65,17 @@ int checkAdjaceny(int row, int col,  Dungeon *d, char cellToLookFor){
   int i, j;
   for(i = 0; i < adjacentCells; i++){
     for(j = 0; j < adjacentCells; j++){
-      if(d->map[row + xRoutes[j]][col + yRoutes[j]] == cellToLookFor) return FALSE;
+      if(d->map[row + xRoutes[j]][col + yRoutes[j]] == cellToLookFor) return FAILURE;
     }
   }
-  return TRUE;
+  return SUCCESS;
 }
 
 /*
  *Kind of messy. setting the points when checking if this is a legal place.
  */
 int isLegalPlace(int row, int col, Dungeon *d, Room *r){
-  if(isInBounds(row, col, r) == FALSE) return FALSE;
+  if(isInBounds(row, col, r) == FAILURE) return FAILURE;
   Coordinate tempCoord;
   tempCoord.row = row;
   tempCoord.col = col;
@@ -84,10 +84,10 @@ int isLegalPlace(int row, int col, Dungeon *d, Room *r){
   char roomCell = '.';
   for(i = row; i < row + r->height; i++){
     for(j = col; j < col + r->width; j++){
-      if(checkAdjaceny(i, j, d, roomCell) == FALSE) return FALSE;
+      if(checkAdjaceny(i, j, d, roomCell) == FAILURE) return FAILURE;
     }
   }
-  return TRUE;
+  return SUCCESS;
 }
 
 void placeRooms(Dungeon *d){
@@ -98,7 +98,7 @@ void placeRooms(Dungeon *d){
   while(roomNumber < d->numOfRooms){
     int randomRow = (rand() % 19) + 1;
     int randomCol = (rand() % 78) + 1;
-    if(isLegalPlace(randomRow, randomCol, d, &(d->rooms[roomNumber])) == TRUE){
+    if(isLegalPlace(randomRow, randomCol, d, &(d->rooms[roomNumber])) == SUCCESS){
       
       fillMap(d, roomNumber);
       roomNumber++;
@@ -156,7 +156,7 @@ void connectRooms(Dungeon *d){
   char corridorCell = '#';
   for(i = 0; i < d->numOfRooms - 1; i++){
     Room currRoom = d->rooms[i];
-    if(currRoom.isConnected == FALSE){
+    if(currRoom.isConnected == FAILURE){
       Room nextRoom = d->rooms[i + 1];
 
       //new
@@ -202,10 +202,21 @@ void connectRooms(Dungeon *d){
 	  d->hardnessMap[currCoord.row][currCoord.col] = MIN_HARDNESS;
 	}
       }
-      d->rooms[i].isConnected = TRUE;
+      d->rooms[i].isConnected = SUCCESS;
     }
   }
 }
+
+
+void generateStairs(Dungeon *d, int row, int col, int dir){
+  //if 0, go upstairs
+  if(dir == 0){
+    d->map[row][col] = '<';
+  }else{
+    d->map[row][col] = '>';
+  }
+}
+
 
 int generateRange(int min, int max){
   return rand() % (max - min) + min;

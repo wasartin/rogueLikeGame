@@ -1,0 +1,10 @@
+Inside of the main method I create the WINDOW base, which is the screen the player will see. I initilize everything in the main, then
+       I check for which key is being pressed by the player. If they decide to go up or down the stairs I use a goto statment to go back
+       to dungeon creation and make a new level. Levels are not maintained. Then I check if they are requesting to see the monster screen
+       (pressing m), I calculate and display the mosnter screen accordingly, only showing a total of ten monsters at a time. The player
+       can scroll up or down. If the player pressed Q, then they will leave the game. Finally they go to a method called runGame(...).
+      
+This method calls for the method action(char action, int *addRow, int *addCol) which will help give the direction for the character.
+
+There were not major changes to the game outside of adding ncurses. After enough turns certain monsters will stop moving, but that
+      is unreleated to this assignment and something I am currently debugging.

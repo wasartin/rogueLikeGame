@@ -11,5 +11,6 @@ void setSortedRoomArray(Dungeon *d);
 int generateRange(int min, int max);
 void connectRooms(Dungeon *d);
 void fillMap(Dungeon *d, int RoomNumber);
+void generateStairs(Dungeon *d, int row, int col, int dir);
 
 #endif

@@ -1,5 +1,5 @@
 dungeonGame: dungeonGame.o buildDungeon.o heap.o pathFinding.o character.o
-	gcc buildDungeon.o dungeonGame.o heap.o pathFinding.o character.o -o dungeonGame
+	gcc -lncurses buildDungeon.o dungeonGame.o heap.o pathFinding.o character.o -o dungeonGame
 
 buildDungeon.o: buildDungeon.c dungeonInfo.h buildDungeon.h
 	gcc -c buildDungeon.c -Wall -Werror -ggdb -o buildDungeon.o
