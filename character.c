@@ -12,58 +12,58 @@ void makeMonsters(Dungeon *d){
     d->monsters[i].characteristic = rand() & 0xf;
     //d->monsters[i].characteristic = 0x7;
     d->monsters[i].speed = generateRange(5, 21);
-    d->monsters[i].alive = SUCCESS;
+    d->monsters[i].alive = 0;
     d->monsters[i].lastKnownPosOfPC.row = 0;
     d->monsters[i].lastKnownPosOfPC.col = 0;
     d->monsters[i].turn = 1000 / d->monsters[i].speed;
     switch(d->monsters[i].characteristic){
     case 0x0:
-      d->monsters[i].representation = '0';
+      d->monsters[i].type = '0';
       break;
     case 0x1:
-      d->monsters[i].representation = '1';
+      d->monsters[i].type = '1';
       break;
     case 0x2:
-      d->monsters[i].representation = '2';
+      d->monsters[i].type = '2';
       break;
     case 0x3:
-      d->monsters[i].representation = '3';
+      d->monsters[i].type = '3';
       break;
     case 0x4:
-      d->monsters[i].representation = '4';
+      d->monsters[i].type = '4';
       break;
     case 0x5:
-      d->monsters[i].representation = '5';
+      d->monsters[i].type = '5';
       break;
     case 0x6:
-      d->monsters[i].representation = '6';
+      d->monsters[i].type = '6';
       break;
     case 0x7:
-      d->monsters[i].representation = '7';
+      d->monsters[i].type = '7';
       break;
     case 0x8:
-      d->monsters[i].representation = '8';
+      d->monsters[i].type = '8';
       break;
     case 0x9:
-      d->monsters[i].representation = '9';
+      d->monsters[i].type = '9';
       break;
     case 0xa:
-      d->monsters[i].representation = 'a';
+      d->monsters[i].type = 'a';
       break;
     case 0xb:
-      d->monsters[i].representation = 'b';
+      d->monsters[i].type = 'b';
       break;
     case 0xc:
-      d->monsters[i].representation = 'c';
+      d->monsters[i].type = 'c';
       break;
     case 0xd:
-      d->monsters[i].representation = 'd';
+      d->monsters[i].type = 'd';
       break;
     case 0xe:
-      d->monsters[i].representation = 'e';
+      d->monsters[i].type = 'e';
       break;
     case 0xf:
-      d->monsters[i].representation = 'f';
+      d->monsters[i].type = 'f';
       break;
     default:
       break;
@@ -84,7 +84,7 @@ void placeMonsters(Dungeon *d){
       int selectedCol = currRoom.topLeftCoord.col + randomCol;
       if(d->hardnessMap[selectedRow][selectedCol] != 255){
 	if(d->characterMap[selectedRow][selectedCol] == '\0'){
-	  d->characterMap[selectedRow][selectedCol] = d->monsters[i].representation;
+	  d->characterMap[selectedRow][selectedCol] = d->monsters[i].type;
 	  d->monsters[i].location.row = selectedRow;
 	  d->monsters[i].location.col = selectedCol;
 	  placed = 1;
@@ -204,7 +204,7 @@ int proximityCheck(Dungeon *d, Character *monster){
 void moveCharacter(Dungeon *d, int targetRow, int targetCol, Character *curr){
   if(curr->alive == 0){
     if(curr->location.row != targetRow || curr->location.col != targetCol){
-      if(curr->representation == '@'){
+      if(curr->type == '@'){
 	if(d->characterMap[targetRow][targetCol] != '\0'){
 	  int i;
 	  for(i = 0; i < d->numOfMonsters; i++){
@@ -239,7 +239,7 @@ void moveCharacter(Dungeon *d, int targetRow, int targetCol, Character *curr){
     }
     sortDeadMonsters(d);
     d->characterMap[curr->location.row][curr->location.col] = '\0';
-    d->characterMap[targetRow][targetCol] = curr->representation;
+    d->characterMap[targetRow][targetCol] = curr->type;
     curr->location.row = targetRow;
     curr->location.col = targetCol;
   }

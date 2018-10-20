@@ -51,7 +51,7 @@ typedef struct{
   Coordinate lastKnownPosOfPC;
   int8_t speed;
   int turn;
-  char representation;
+  char type;
 }Character;
 
 typedef struct{

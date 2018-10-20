@@ -214,7 +214,14 @@ BAD SEEDS:
 10/17
 	-Scrolling is done.
 	-added quit.
-
+10/18
+	-Working on monster movement. Weird that some jsut stop
 
 Known Bugs:
 	-After a certain number of turns, certain monsters will just stop moving. Not really a bug, but something I want to fix.
+
+TODO:
+	-Work on MoveMonster, its a bit broke
+	-Adding method to sort monsters by status and remove dead from the array
+	-change representation to type
+	-change alive to status

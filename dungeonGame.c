@@ -28,7 +28,7 @@ void runGame(Dungeon *d, char userInput);
 void action(char action, int *addRow, int *addCol);
 
 void placeCharacter(Dungeon *d, int row, int col, Character *curr){
-  d->characterMap[row][col] = curr->representation;
+  d->characterMap[row][col] = curr->type;
   curr->location.row = row;
   curr->location.col = col;
 }
@@ -74,7 +74,7 @@ int main(int argc, char *argv[]){
     int row = d.rooms[0].topLeftCoord.row;
     int col = d.rooms[0].topLeftCoord.col;
     d.pc.alive = 0;
-    d.pc.representation = playerCell;
+    d.pc.type = playerCell;
     d.pc.location.row = row;
     d.pc.location.col = col;
     d.pc.speed = generateRange(5, 21);
@@ -125,7 +125,7 @@ int main(int argc, char *argv[]){
       while(inMonsterScreen == 0){
 	for(i = 0; i < screenLimit; i++){
 	  if((i + shift < d.numOfMonsters) && (i + shift >= 0)){
-	    char currMon = d.monsters[i + shift].representation;
+	    char currMon = d.monsters[i + shift].type;
 	    int yDifference = d.pc.location.row - d.monsters[i + shift].location.row;
 	    int xDifference = d.pc.location.col - d.monsters[i + shift].location.col;
 	    char first[6];
@@ -283,7 +283,7 @@ void runGame(Dungeon *d, char userInput){
   Character *curr;
   while((curr = heap_remove_min(&h))){
     curr->hn = NULL;
-    if(curr->representation == '@'){   
+    if(curr->type== '@'){   
       int addRow = 0;
       int addCol = 0;
       action(userInput, &addRow, &addCol);
@@ -443,7 +443,7 @@ void loadGame(Dungeon *d){
     fillMap(d, i);
   }
 
-  d->pc.representation = '@';
+  d->pc.type = '@';
   Character curr = d->pc;
   placeCharacter(d, rowOfPlayer, colOfPlayer, &curr);
   fclose(fp);
