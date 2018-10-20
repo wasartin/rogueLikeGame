@@ -9,14 +9,8 @@
 void makeMonsters(Dungeon *d){
   int i;
   for(i = 0; i < d->numOfMonsters; i++){
-    /*
-    if(i % 2 == 0){
-      d->monsters[i].characteristic = 0x3;
-    }else{
-      d->monsters[i].characteristic = 0x7;
-    }
-    */
     d->monsters[i].characteristic = rand() & 0xf;
+    //d->monsters[i].characteristic = 0x7;
     d->monsters[i].speed = generateRange(5, 21);
     d->monsters[i].alive = SUCCESS;
     d->monsters[i].lastKnownPosOfPC.row = 0;
@@ -105,7 +99,7 @@ void moveMonster(Dungeon *d, Character *monster){
   int currCol = monster->location.col;
   int targetRow, targetCol;
   int chance = rand() % 2;
-  if((monster->characteristic & NPC_TELEPATH) || (proximityCheck(d, monster) == SUCCESS)){
+  if((monster->characteristic & NPC_TELEPATH) || (proximityCheck(d, monster) == 0)){
     monster->lastKnownPosOfPC.row = d->pc.location.row;
     monster->lastKnownPosOfPC.col = d->pc.location.col;
   }
@@ -117,8 +111,7 @@ void moveMonster(Dungeon *d, Character *monster){
     for(j = -1; j < 2; j++){
       //if  within bounds, throw it into the neighbors
       if((currRow + i > 0 && currRow + i < 20) && (currCol + j > 0 && currCol + j < 79)){
-	if((monster->characteristic & NPC_TUNNEL) && d->hardnessMap[currRow + i][currCol + j] != 255){
-	  //allow all round
+	if((monster->characteristic & NPC_TUNNEL) && d->hardnessMap[currRow + i][currCol + j] != MAX_HARDNESS){
 	  neighbors[neighborLength].row = currRow + i;
 	  neighbors[neighborLength].col = currCol + j;
 	  neighborLength++;
@@ -164,31 +157,26 @@ void moveMonster(Dungeon *d, Character *monster){
     }
   }
   else if(monster->lastKnownPosOfPC.row != 0){ //does see player
-    int smallestRowDiff = monster->lastKnownPosOfPC.row - monster->location.row;
-    int smallestColDiff = monster->lastKnownPosOfPC.col - monster->location.col;
-    targetRow = monster->location.row;
-    targetCol = monster->location.col;
+    int smallestRowDiff = abs(monster->lastKnownPosOfPC.row - monster->location.row);
+    int smallestColDiff = abs(monster->lastKnownPosOfPC.col - monster->location.col);
+    Coordinate targetCoord;
+    targetCoord.row = monster->location.row;
+    targetCoord.col = monster->location.col;
     int i;
-    int rowPriority = rand() % 2;
-    if(rowPriority == 0 && smallestRowDiff != 0){
-      for(i = 0; i < neighborLength; i++){
-	if(monster->lastKnownPosOfPC.row - neighbors[i].row < smallestRowDiff){
-	  smallestRowDiff = neighbors[i].row;
-	  targetRow = neighbors[i].row;
-	  targetCol = neighbors[i].col;
-	}
-      }
-    }else {
-      for(i = 0; i < neighborLength; i++){
-	if(monster->lastKnownPosOfPC.col - neighbors[i].col < smallestColDiff){
-	  smallestColDiff = neighbors[i].col;
-	  targetRow = neighbors[i].row;
-	  targetCol = neighbors[i].col;
-	}
+    //find the smallest Row and Col Diff
+    for(i = 0; i < neighborLength; i++){
+      int newRowDiff = abs(monster->lastKnownPosOfPC.row - neighbors[i].row);
+      int newColDiff = abs(monster->lastKnownPosOfPC.col - neighbors[i].col);
+      if((smallestRowDiff > newRowDiff) ||(smallestColDiff > newColDiff)){
+	smallestRowDiff = abs(monster->lastKnownPosOfPC.row - neighbors[i].row);
+	smallestColDiff = abs(monster->lastKnownPosOfPC.col - neighbors[i].col);
+	targetCoord.row = neighbors[i].row;
+	targetCoord.col = neighbors[i].col;
       }
     }
+    targetRow = targetCoord.row;
+    targetCol = targetCoord.col;
   }
-  //Add in case if the player is seen/
   else {
     chance = 0;
   }
@@ -200,45 +188,14 @@ void moveMonster(Dungeon *d, Character *monster){
     int num = generateRange(0, neighborLength);
     targetRow = neighbors[num].row;
     targetCol = neighbors[num].col;
-    
   }
   moveCharacter(d, targetRow, targetCol, monster);
 }
 
-int isInSameRoom(Dungeon *d, Character *monster){
-  int i;
-  for(i = 0; i < d->numOfRooms; i++){
-    int playerHere = 1;
-    int monsterHere = 1;
-    int currRow;
-    int currCol;
-    for(currRow = d->rooms[i].topLeftCoord.row; currRow < d->rooms[i].topLeftCoord.row +
-	  d->rooms[i].height; currRow++){
-      for(currCol = d->rooms[i].topLeftCoord.col; currCol < d->rooms[i].topLeftCoord.row +
-	    d->rooms[i].width; currCol++){
-	if(currRow == d->pc.location.row && currCol == d->pc.location.col){
-	  playerHere = 0;
-	}
-	if(currRow == monster->location.row && 
-	   currCol == monster->location.col){
-	  monsterHere = 0;
-	}
-      }
-    }
-    if(playerHere == 0 && monsterHere == 0){
-      return SUCCESS;
-    }else {
-      playerHere = monsterHere = FAILURE;
-    }
-  }
-  return FAILURE;
-}
-
 int proximityCheck(Dungeon *d, Character *monster){
-  int rowDifference = d->pc.location.row - monster->location.row;
-  int colDifference = d->pc.location.col - monster->location.col;
-  if((rowDifference <= 5 && rowDifference >= -5) &&
-     (colDifference <= 5 && colDifference >= -5)){
+  int rowDifference = abs(d->pc.location.row - monster->location.row);
+  int colDifference = abs(d->pc.location.col - monster->location.col);
+  if((rowDifference < 6) && (colDifference < 6)){
     return 0;
   }
   return 1;
@@ -246,30 +203,129 @@ int proximityCheck(Dungeon *d, Character *monster){
 
 void moveCharacter(Dungeon *d, int targetRow, int targetCol, Character *curr){
   if(curr->alive == 0){
-    if(d->hardnessMap[curr->location.row][curr->location.col] != MIN_HARDNESS){
-      d->map[curr->location.row][curr->location.col] = '#';
-      d->hardnessMap[curr->location.row][curr->location.col] = 0;
-    }
-    if(d->characterMap[targetRow][targetCol] != '\0'){
-      if(curr->representation != '@'){
-	if(d->pc.location.row == targetRow && d->pc.location.col == targetCol){
-	  d->pc.alive = 1;
-	}else{
+    if(curr->location.row != targetRow || curr->location.col != targetCol){
+      if(curr->representation == '@'){
+	if(d->characterMap[targetRow][targetCol] != '\0'){
 	  int i;
 	  for(i = 0; i < d->numOfMonsters; i++){
 	    if(d->monsters[i].location.row == targetRow && d->monsters[i].location.col == targetCol){
+	      d->characterMap[targetRow][targetCol] = '\0';
 	      d->monsters[i].alive = 1;
-	      //might cut this out
-	      //d->numOfMonsters--;
 	    }
 	  }
 	}
       }
-      d->characterMap[targetRow][targetCol] = '\0';
+      else {
+	if(d->hardnessMap[curr->location.row][curr->location.col] != MIN_HARDNESS){
+	  d->map[curr->location.row][curr->location.col] = '#';
+	  d->hardnessMap[curr->location.row][curr->location.col] = 0;
+	}
+	if(d->characterMap[targetRow][targetCol] != '\0'){
+	  //check for player
+	  if(d->pc.location.row == targetRow && d->pc.location.col == targetCol){
+	    d->pc.alive = 1;
+	  }else {
+	    int i;
+	    for(i = 0; i < d->numOfMonsters; i++){
+	      if(d->monsters[i].location.row == targetRow && d->monsters[i].location.col == targetCol){
+		d->characterMap[targetRow][targetCol] = '\0';
+		d->monsters[i].alive = 1;
+		break;
+	      }
+	    }
+	  }
+	}
+      }
     }
+    sortDeadMonsters(d);
     d->characterMap[curr->location.row][curr->location.col] = '\0';
     d->characterMap[targetRow][targetCol] = curr->representation;
     curr->location.row = targetRow;
     curr->location.col = targetCol;
   }
+  
 }
+
+void sortDeadMonsters(Dungeon *d){
+  int i;
+  for(i = 0; i < d->numOfMonsters - 1; i++){
+    if(d->monsters[i].alive == 1 && d->monsters[i + 1].alive == 0){
+      Character tempMonster = d->monsters[i];
+      d->monsters[i] = d->monsters[i + 1];
+      d->monsters[i + 1] = tempMonster;
+    }
+  }
+}
+
+/*
+void newMoveCharacter(Dungeon *d, int targetRow, int targetCol, Character *curr){
+  if(curr->location.row != targetRow && curr->location.col != targetCol){
+    if(curr->representation == '@'){
+      if(d->characterMap[targetRow][targetCol] != '\0'){
+	//check for mons
+	int i;
+	for(i = 0; i < d->numOfMonsters; i++){
+	  d->monsters[i].alive = 1;
+	}
+      }
+    }else {
+      if(d->hardnessMap[curr->location.row][curr->location.col] != MIN_HARDNESS){
+	d->map[curr->location.row][curr->location.col] = '#';
+	d->hardnessMap[curr->location.row][curr->location.col] = 0;
+      }
+      if(d->characterMap[targetRow][targetCol] != '\0'){
+	//check for player
+	if(d->pc.location.row == targetRow && d->pc.location.col == targetCol){
+	  d->pc.alive = 1;
+	}else {
+	  int i;
+	  for(i = 0; i < numOfMonsters; i++){
+	    if(d->monsters[i].row == targetRow && d->monsters[i].location.col == targetCol){
+	      d->monsters[i].alive = 1;
+	    }
+	  }
+	}
+      }
+    }
+  }
+  d->characterMap[targetRow][targetCol] = '\0';
+  d->characterMap[curr->location.row][curr->location.col] = '\0';
+  d->characterMap[targetRow][targetCol] = curr->representation;
+  curr->location.row = targetRow;
+  curr->location.col = targetCol;
+}
+
+
+
+
+
+
+  if(curr->location.row != targetRow && curr->location.col != targetCol){
+    if(curr->alive == 0){
+      if(d->hardnessMap[curr->location.row][curr->location.col] != MIN_HARDNESS){
+	d->map[curr->location.row][curr->location.col] = '#';
+	d->hardnessMap[curr->location.row][curr->location.col] = 0;
+      }
+      if(d->characterMap[targetRow][targetCol] != '\0'){
+	if(curr->representation != '@'){
+	  if(d->pc.location.row == targetRow && d->pc.location.col == targetCol){
+	    d->pc.alive = 1;
+	  }else{
+	    int i;
+	    for(i = 0; i < d->numOfMonsters; i++){
+	      if(d->monsters[i].location.row == targetRow && d->monsters[i].location.col == targetCol){
+		d->monsters[i].alive = 1;
+		//d->numOfMonsters--; //maybe I should have another member that has monsters seen?
+	      }
+	    }
+	  }
+	}
+      }
+    }
+  }
+  d->characterMap[targetRow][targetCol] = '\0';
+  d->characterMap[curr->location.row][curr->location.col] = '\0';
+  d->characterMap[targetRow][targetCol] = curr->representation;
+  curr->location.row = targetRow;
+  curr->location.col = targetCol;
+*/

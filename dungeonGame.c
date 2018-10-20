@@ -73,7 +73,7 @@ int main(int argc, char *argv[]){
     createDungeon(&d);
     int row = d.rooms[0].topLeftCoord.row;
     int col = d.rooms[0].topLeftCoord.col;
-    d.pc.alive = SUCCESS;
+    d.pc.alive = 0;
     d.pc.representation = playerCell;
     d.pc.location.row = row;
     d.pc.location.col = col;
@@ -105,7 +105,7 @@ int main(int argc, char *argv[]){
   keypad(base, TRUE);
 
   newPrintMap(&d);
-  while(d.pc.alive == 0 && d.numOfMonsters != 0){
+  while(d.pc.alive == 0 && d.monsters[0].alive == 0){
     char ch = getch();
     if((ch == '>' && d.map[d.pc.location.row][d.pc.location.col] == '>') ||
        (ch == '<' && d.map[d.pc.location.row][d.pc.location.col] == '<')){
@@ -130,6 +130,7 @@ int main(int argc, char *argv[]){
 	    int xDifference = d.pc.location.col - d.monsters[i + shift].location.col;
 	    char first[6];
 	    char second[5];
+	    char status[6];
 	    if(yDifference < 0){
 	      yDifference = yDifference * -1;
 	      strcpy(first, "south");
@@ -144,13 +145,19 @@ int main(int argc, char *argv[]){
 	    else{
 	      strcpy(second, "west");
 	    }
+	    if(d.monsters[i + shift].alive == 0){
+	      strcpy(status, "alive");
+	    }
+	    else{
+	      strcpy(status, "dead");
+	    }
 	    //print
 	    //put all of the strings together/
 	    mvprintw(i + 1, DUNGEON_WIDTH / 5, "Monster: %c is ", currMon);
 	    printw("%d ", yDifference);
 	    printw("%s and ", first);
 	    printw("%d ", xDifference);
-	    printw("%s.\n", second);
+	    printw("%s, Status: %s.\n", second, status);
 	  }	
 	}
 	int32_t currCommand = getch();
@@ -185,7 +192,7 @@ int main(int argc, char *argv[]){
 
   endwin();
   printf("GAME OVER\n");
-  if(d.numOfMonsters == 0){
+  if(d.monsters[0].alive == 1){
     printf("You Win!\n");
   }else {
     printf("If you want to win next time just remember you don't have to be perfect... \n");
@@ -271,7 +278,7 @@ void runGame(Dungeon *d, char userInput){
   d->pc.hn = heap_insert(&h, &d->pc);
   int i;
   for(i = 0; i < d->numOfMonsters; i++){
-    d->monsters[i].hn = heap_insert(&h, &d->monsters[i]);
+      d->monsters[i].hn = heap_insert(&h, &d->monsters[i]);
   }
   Character *curr;
   while((curr = heap_remove_min(&h))){
@@ -290,7 +297,7 @@ void runGame(Dungeon *d, char userInput){
       generateNormalPathMap(d);
       generateTunnelPathMap(d);
     }else{
-      moveMonster(d, curr);
+	moveMonster(d, curr);
     }
   }
   heap_delete(&h);
