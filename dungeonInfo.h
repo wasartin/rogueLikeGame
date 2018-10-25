@@ -43,6 +43,7 @@ typedef struct{
   int isConnected;
 }Room;
 
+
 typedef struct{
   heap_node_t *hn;
   Coordinate location;
@@ -52,6 +53,7 @@ typedef struct{
   int8_t speed;
   int turn;
   char type;
+  char seenMap[DUNGEON_HEIGHT][DUNGEON_WIDTH];
 }Character;
 
 typedef struct{
@@ -66,6 +68,7 @@ typedef struct{
   char characterMap[DUNGEON_HEIGHT][DUNGEON_WIDTH];
   Character pc;
   int runs;
+  bool fogOfWar;
 } Dungeon;
 
 typedef struct{

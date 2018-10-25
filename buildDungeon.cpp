@@ -29,6 +29,18 @@ void initlizeDungeon(Dungeon *d){
   }
 }
 
+void createDungeon(Dungeon *d){
+  initlizeDungeon(d);
+  d->runs = 0;
+  d->rooms = (Room*)malloc(MAX_NUMBER_OF_ROOMS * sizeof(Room));
+  generateRooms(d);
+  placeRooms(d);
+  setSortedRoomArray(d);
+  connectRooms(d);
+  generateStairs(d, d->rooms[0].topLeftCoord.row, d->rooms[0].topLeftCoord.col, 0);
+  generateStairs(d, d->rooms[d->numOfRooms - 1].topLeftCoord.row, d->rooms[d->numOfRooms - 1].topLeftCoord.col, 1);
+}
+
 void generateRooms(Dungeon *d){
   int qtyOfRooms = generateRange(MIN_NUMBER_OF_ROOMS, MAX_NUMBER_OF_ROOMS);
   d->numOfRooms = qtyOfRooms;
@@ -92,7 +104,7 @@ int isLegalPlace(int row, int col, Dungeon *d, Room *r){
 
 void placeRooms(Dungeon *d){
   printf("Placing Rooms inside Dungeon...\n");
-  int roomNumber = 0;
+  uint8_t roomNumber = 0;
   int attempts = 0;
   int attemptLimit = 2000;
   while(roomNumber < d->numOfRooms){
@@ -125,10 +137,10 @@ void fillMap(Dungeon *d, int roomNumber){
   }
 }
 void setSortedRoomArray(Dungeon *d){
-  int i;
+  uint8_t i;
   //sort from top left to bottom right
   for(i = 0; i < d->numOfRooms; i++){
-    int j;
+    uint8_t j;
     int minIndex = i;
     for(j = i + 1; j <  d->numOfRooms; j++){
       if(d->rooms[minIndex].topLeftCoord.col == d->rooms[j].topLeftCoord.col){
@@ -150,7 +162,7 @@ void setSortedRoomArray(Dungeon *d){
 }
 
 void connectRooms(Dungeon *d){
-  int i;
+  uint8_t i;
   int attempts = 0;
   int attemptLimit = 2000;
   char corridorCell = '#';

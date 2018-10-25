@@ -216,12 +216,38 @@ BAD SEEDS:
 	-added quit.
 10/18
 	-Working on monster movement. Weird that some jsut stop
+10/19
+	-Refactored moveMonster, no more idle monsters. 
+	-Added method to sort monsters by their status. the dead go to the back of the list.
+	-changed Character.representation to Character.type
+
+10/20
+	-Just finished porting everything to C++. 
+	-Going to move I/O to its own file.
+
+10/22 
+	-Changing structs into classes.
+	-Still workingo n moving I/O to its own file.
+	    -Just finished
+	-Working on Teleport right now, that seems really easily, especially since the Teacher already
+	did the random teleport code for us.
+
+10/23
+	-Teleporting * will kill a monster when it is going over it., just have a case where * does not set taget to null
+	-Teleporting * movement is weird (takes to clicks to move it)
+	-Really need to change structs into classes
+	-Teleport needs to go through rock
+	-Ok, finally actually starting to turn structs into classes. Tearing Character.h into Character.h 
+	     as a base class, and a npc.h and pc.h
+	     -THis is going to break so much stuff, and take forever to get back together.
+	     -Add semi colon and jsut fix my classeswtih the info from class
+10/24
+	-I am currently in the nightmare of changing Character into a parent class to npc and pc.
+	-Added a move class. To better help with abstraction
+	-I have so much to do now.
+TODO:
+	-Make my Makefile look more like the teachers.
+	-Make a utils class for common methods I use throughout my code
+	-Never stop refactoring
 
 Known Bugs:
-	-After a certain number of turns, certain monsters will just stop moving. Not really a bug, but something I want to fix.
-
-TODO:
-	-Work on MoveMonster, its a bit broke
-	-Adding method to sort monsters by status and remove dead from the array
-	-change representation to type
-	-change alive to status

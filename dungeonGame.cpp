@@ -12,6 +12,7 @@
 #include "buildDungeon.h"
 #include "pathFinding.h"
 #include "character.h"
+#include "io.h"
 
 const char roomCell = '.';
 const char corridorCell = '#';
@@ -19,13 +20,10 @@ const char playerCell = '@';
 const char rockCell = ' ';
 
 void printMap(Dungeon *d);
-void newPrintMap(Dungeon *d);
 void srand(unsigned seed);
-void createDungeon(Dungeon *d);
 void saveGame(Dungeon *d);
 void loadGame(Dungeon *d);
-void runGame(Dungeon *d, char userInput);
-void action(char action, int *addRow, int *addCol);
+void runGame(Dungeon *d);
 
 void placeCharacter(Dungeon *d, int row, int col, Character *curr){
   d->characterMap[row][col] = curr->type;
@@ -69,11 +67,10 @@ int main(int argc, char *argv[]){
     initlizeDungeon(&d);
     loadGame(&d);
   } else{
-  STAIRS:
     createDungeon(&d);
     int row = d.rooms[0].topLeftCoord.row;
     int col = d.rooms[0].topLeftCoord.col;
-    d.pc.alive = 0;
+    d.pc.alive = true;
     d.pc.type = playerCell;
     d.pc.location.row = row;
     d.pc.location.col = col;
@@ -86,113 +83,26 @@ int main(int argc, char *argv[]){
   generateNormalPathMap(&d);
   generateTunnelPathMap(&d);
   
-  printf("Map Created\n");
-  
   if(numOfMonsters == 0){
     numOfMonsters = d.numOfRooms;
   }
+  
+  d.fogOfWar = true;
   d.numOfMonsters = numOfMonsters;
   d.monsters = (Character*)malloc(numOfMonsters * sizeof(Character));
   makeMonsters(&d);
   placeMonsters(&d);
   
-  //clears screen and allocates memory for screen
-  WINDOW *base = initscr();
-  raw();
-  noecho();
-  cbreak();
-  curs_set(0);
-  keypad(base, TRUE);
-
+  initTerminal();
+  
   newPrintMap(&d);
-  while(d.pc.alive == 0 && d.monsters[0].alive == 0){
-    char ch = getch();
-    if((ch == '>' && d.map[d.pc.location.row][d.pc.location.col] == '>') ||
-       (ch == '<' && d.map[d.pc.location.row][d.pc.location.col] == '<')){
-      free(d.rooms);
-      free(d.monsters);
-      goto STAIRS;
-    }
-    else if(ch == 'm'){
-      int i;
-      int screenLimit = 10;
-      if(d.numOfMonsters < 10){
-	screenLimit = d.numOfMonsters;
-      }
-      int shift = 0;
-      int inMonsterScreen = 0;
-      clear();
-      while(inMonsterScreen == 0){
-	for(i = 0; i < screenLimit; i++){
-	  if((i + shift < d.numOfMonsters) && (i + shift >= 0)){
-	    char currMon = d.monsters[i + shift].type;
-	    int yDifference = d.pc.location.row - d.monsters[i + shift].location.row;
-	    int xDifference = d.pc.location.col - d.monsters[i + shift].location.col;
-	    char first[6];
-	    char second[5];
-	    char status[6];
-	    if(yDifference < 0){
-	      yDifference = yDifference * -1;
-	      strcpy(first, "south");
-	    }
-	    else{
-	      strcpy(first, "north");
-	    }
-	    if(xDifference < 0){
-	      xDifference = xDifference * -1;
-	      strcpy(second, "east");
-	    }
-	    else{
-	      strcpy(second, "west");
-	    }
-	    if(d.monsters[i + shift].alive == 0){
-	      strcpy(status, "alive");
-	    }
-	    else{
-	      strcpy(status, "dead");
-	    }
-	    //print
-	    //put all of the strings together/
-	    mvprintw(i + 1, DUNGEON_WIDTH / 5, "Monster: %c is ", currMon);
-	    printw("%d ", yDifference);
-	    printw("%s and ", first);
-	    printw("%d ", xDifference);
-	    printw("%s, Status: %s.\n", second, status);
-	  }	
-	}
-	int32_t currCommand = getch();
-	switch(currCommand){
-	case KEY_UP:
-	  if(shift != 0){
-	    shift--;
-	  }
-	  break;
-	case KEY_DOWN:
-	  if(shift + screenLimit < d.numOfMonsters){
-	    shift++;
-	  }
-	  break;
-	case 27:
-	  inMonsterScreen = 1;
-	  break;
-	default: 
-	  break;
-	}
-	refresh();
-      } 
-    }
-    else if(ch == 'Q'){
-      break;
-    }else{
+  while(d.pc.alive == true && d.monsters[0].alive == true){
       d.runs++;
-      runGame(&d, ch); 
-    }
-
+      runGame(&d); 
   }
-
   endwin();
   printf("GAME OVER\n");
-  if(d.monsters[0].alive == 1){
+  if(d.monsters[0].alive == false){
     printf("You Win!\n");
   }else {
     printf("If you want to win next time just remember you don't have to be perfect... \n");
@@ -212,87 +122,20 @@ static int32_t moveComparator(const void *key, const void *with){
   return((Character *) key)->turn - ((Character *) with)->turn;
 }
 
-void action(char action, int *addRow, int *addCol){
-  switch(action){
-    //move upper left
-  case '7':
-  case 'y':
-    *addRow = -1;
-    *addCol = -1;
-    break;
-    //move up
-  case '8':
-  case 'k':
-    *addRow = -1;
-    *addCol = 0;
-    break;
-    //move upper right
-  case '9':
-  case 'u':
-    *addRow = -1;
-    *addCol = 1;
-    break;
-    //move right
-  case '6':
-  case 'l':
-    *addRow = 0;
-    *addCol = 1;
-    break;
-    //lower right
-  case '3':
-  case 'n':
-    *addRow = 1;
-    *addCol = 1;
-    break;
-    //move down
-  case '2':
-  case 'j':
-    *addRow = 1;
-    *addCol = 0;
-    break;
-    //lower left
-  case '1':
-  case 'b':
-    *addRow = 1;
-    *addCol = -1;
-    break;
-    //left
-  case '4':
-  case 'h':
-    *addRow = 0;
-    *addCol = -1;
-    break;
-    //down stairs
-    //rest
-  case '5':
-    break;
-  default:
-    break;
-  }
-}
-
-void runGame(Dungeon *d, char userInput){
+void runGame(Dungeon *d){
   heap_t h;
   heap_init(&h, moveComparator, NULL);
   //fill heap
   d->pc.hn = heap_insert(&h, &d->pc);
-  int i;
+  uint8_t i;
   for(i = 0; i < d->numOfMonsters; i++){
       d->monsters[i].hn = heap_insert(&h, &d->monsters[i]);
   }
   Character *curr;
-  while((curr = heap_remove_min(&h))){
+  while((curr = (Character *)heap_remove_min(&h))){
     curr->hn = NULL;
-    if(curr->type== '@'){   
-      int addRow = 0;
-      int addCol = 0;
-      action(userInput, &addRow, &addCol);
-      if((d->pc.location.row + addRow > 0 && d->pc.location.row + addRow < 20) && 
-	 (d->pc.location.col + addCol > 0 && d->pc.location.col + addCol < 79)){
-	if(d->hardnessMap[d->pc.location.row + addRow][d->pc.location.col + addCol] == MIN_HARDNESS){
-	  moveCharacter(d, d->pc.location.row + addRow, d->pc.location.col + addCol, &d->pc);	  
-	}
-      }
+    if(curr->type == '@'){   
+      handleUserInput(d);
       newPrintMap(d);
       generateNormalPathMap(d);
       generateTunnelPathMap(d);
@@ -301,18 +144,6 @@ void runGame(Dungeon *d, char userInput){
     }
   }
   heap_delete(&h);
-}
-
-void createDungeon(Dungeon *d){
-  initlizeDungeon(d);
-  d->runs = 0;
-  d->rooms = (Room*)malloc(MAX_NUMBER_OF_ROOMS * sizeof(Room));
-  generateRooms(d);
-  placeRooms(d);
-  setSortedRoomArray(d);
-  connectRooms(d);
-  generateStairs(d, d->rooms[0].topLeftCoord.row, d->rooms[0].topLeftCoord.col, 0);
-  generateStairs(d, d->rooms[d->numOfRooms - 1].topLeftCoord.row, d->rooms[d->numOfRooms - 1].topLeftCoord.col, 1);
 }
 
 void printMap(Dungeon *d){
@@ -327,23 +158,6 @@ void printMap(Dungeon *d){
     }
     printf("\n");
   }
-}
-
-void newPrintMap(Dungeon *d){
-  clear();
-  int i, j;
-  for(i = 0; i < DUNGEON_HEIGHT; i++){
-    for(j = 0; j < DUNGEON_WIDTH; j++){
-      char temp;
-      if(d->characterMap[i][j] != '\0'){
-	temp = d->characterMap[i][j];
-      }else{
-	temp = d->map[i][j];
-      }
-      mvaddch(i, j, temp);
-    }
-  }
-  refresh();
 }
 
 void saveGame(Dungeon *d){
@@ -366,7 +180,7 @@ void saveGame(Dungeon *d){
   fwrite(&col, sizeof(uint8_t), 1, fp);
   fwrite(&row, sizeof(uint8_t), 1, fp);
 
-  int i,j;
+  uint8_t i,j;
   for(i = 0; i < DUNGEON_HEIGHT; i++){
     for(j = 0; j < DUNGEON_WIDTH; j++){
       fwrite(&d->hardnessMap[i][j], sizeof(uint8_t), 1, fp);
@@ -409,7 +223,7 @@ void loadGame(Dungeon *d){
   fread(&colOfPlayer, sizeof(uint8_t), 1, fp);
   fread(&rowOfPlayer, sizeof(uint8_t), 1, fp);
 
-  int i, j;
+  uint8_t i, j;
   for(i = 0; i < DUNGEON_HEIGHT; i++){
     for(j = 0; j < DUNGEON_WIDTH; j++){
       fread(&d->hardnessMap[i][j], sizeof(uint8_t), 1, fp);

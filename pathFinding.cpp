@@ -16,13 +16,13 @@ void generateNormalPathMap(Dungeon *d){
   static int initilized = 0;
 
   if(initilized == 0){
+    initilized = 1;
     for(y = 0; y < DUNGEON_HEIGHT; y++){
       for(x = 0; x < DUNGEON_WIDTH; x++){
 	distance[y][x].pos[1] = y;
 	distance[y][x].pos[0] = x;
       }
     }
-    initilized = 1;
   } 
   for(y = 0; y < DUNGEON_HEIGHT; y++){
     for(x = 0; x < DUNGEON_WIDTH; x++){
@@ -57,7 +57,7 @@ void generateNormalPathMap(Dungeon *d){
     }
   }
 
-  while((u = heap_remove_min(&h))){
+  while((u = (dist_t*)heap_remove_min(&h))){
     u->hn = NULL;
     
     //check if it is in the heap AND if the spot is less than the current.
@@ -121,13 +121,13 @@ void generateTunnelPathMap(Dungeon *d){
 
   //since this will run multiply time, might as well save some time and see if it has been init yet.
   if(initilized == 0){
-    for(y = 0; y < DUNGEON_HEIGHT; y++){
-      for(x = 0; x < DUNGEON_WIDTH; x++){
-	distance[y][x].pos[1] = y;
-	distance[y][x].pos[0] = x;
-      }
-    }
-    initilized = 1;
+     initilized = 1;
+     for(y = 0; y < DUNGEON_HEIGHT; y++){
+       for(x = 0; x < DUNGEON_WIDTH; x++){
+	 distance[y][x].pos[1] = y;
+	 distance[y][x].pos[0] = x;
+       }
+     }
   }
 
   //mark all of the dungeon at inifinty
@@ -156,7 +156,7 @@ void generateTunnelPathMap(Dungeon *d){
     }
   }
 
-  while((u = heap_remove_min(&h))){
+  while((u = (dist_t*)heap_remove_min(&h))){
     u->hn = NULL;
     int32_t addlCost = (d->hardnessMap[u->pos[dim_y]][u->pos[dim_x]] / 85) + 1;
     //  /*
