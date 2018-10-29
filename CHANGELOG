@@ -245,6 +245,12 @@ BAD SEEDS:
 	-I am currently in the nightmare of changing Character into a parent class to npc and pc.
 	-Added a move class. To better help with abstraction
 	-I have so much to do now.
+
+10/28
+	-Fixed a bug where I would sometimes throw a seg fault when I teleport
+	-Now I have a bug where the player can't kill any monster
+	     -Fixed it. When I was killing monsters I was setting their status(whether they are alive or dead) to 1 instead of flase
+	
 TODO:
 	-Make my Makefile look more like the teachers.
 	-Make a utils class for common methods I use throughout my code

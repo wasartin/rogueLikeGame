@@ -3,6 +3,7 @@
 
 #include "dungeonInfo.h"
 #include "buildDungeon.h"
+#include "utils.h"
 
 void initlizeDungeon(Dungeon *d){
   printf("Initilizing Dungeon...\n");
@@ -227,9 +228,4 @@ void generateStairs(Dungeon *d, int row, int col, int dir){
   }else{
     d->map[row][col] = '>';
   }
-}
-
-
-int generateRange(int min, int max){
-  return rand() % (max - min) + min;
 }

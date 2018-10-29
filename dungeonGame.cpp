@@ -137,8 +137,6 @@ void runGame(Dungeon *d){
     if(curr->type == '@'){   
       handleUserInput(d);
       newPrintMap(d);
-      generateNormalPathMap(d);
-      generateTunnelPathMap(d);
     }else{
 	moveMonster(d, curr);
     }

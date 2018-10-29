@@ -5,6 +5,7 @@
 #include <stdint.h>
 
 #include "heap.h"
+#include "utils.h"
 
 #define DUNGEON_WIDTH  80
 #define DUNGEON_HEIGHT 21
@@ -25,11 +26,6 @@
 #define NPC_TUNNEL 0x00000004
 #define NPC_ERRATIC 0x00000008
 
-typedef struct{
-  uint8_t row;
-  uint8_t col;
-}Coordinate;
-
 /* Room with points one and two. width = 5, height = 4
   1 - - - -
   - - - - -
@@ -43,7 +39,6 @@ typedef struct{
   int isConnected;
 }Room;
 
-
 typedef struct{
   heap_node_t *hn;
   Coordinate location;
@@ -56,7 +51,11 @@ typedef struct{
   char seenMap[DUNGEON_HEIGHT][DUNGEON_WIDTH];
 }Character;
 
+
+class ;
+
 typedef struct{
+ public:
   uint32_t numOfRooms;
   Room *rooms;
   char map[DUNGEON_HEIGHT][DUNGEON_WIDTH];
@@ -69,7 +68,7 @@ typedef struct{
   Character pc;
   int runs;
   bool fogOfWar;
-} Dungeon;
+}Dungeon;
 
 typedef struct{
   heap_node_t *hn;

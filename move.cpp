@@ -3,6 +3,7 @@
 #include "move.h"
 #include "dungeonInfo.h"
 #include "buildDungeon.h"
+#include "pathFinding.h"
 
 void moveMonster(Dungeon *d, Character *monster){
   int currRow = monster->location.row;
@@ -120,10 +121,12 @@ void moveCharacter(Dungeon *d, int targetRow, int targetCol, Character *curr){
 	  for(i = 0; i < d->numOfMonsters; i++){
 	    if(d->monsters[i].location.row == targetRow && d->monsters[i].location.col == targetCol){
 	      d->characterMap[targetRow][targetCol] = '\0';
-	      d->monsters[i].alive = 1;
+	      d->monsters[i].alive = false;
 	    }
 	  }
 	}
+	generateNormalPathMap(d);
+	generateTunnelPathMap(d);
       }
       else if(curr->type == '*'){}
       else {
@@ -154,7 +157,6 @@ void moveCharacter(Dungeon *d, int targetRow, int targetCol, Character *curr){
     curr->location.row = targetRow;
     curr->location.col = targetCol;
   }
-  
 }
 
 void sortDeadMonsters(Dungeon *d){
