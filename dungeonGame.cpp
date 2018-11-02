@@ -8,6 +8,12 @@
 #include <unistd.h>
 #include <ncurses.h>
 
+
+#include <cstdlib>
+#include <string>
+#include <fstream>
+#include <iostream>
+
 #include "dungeonInfo.h"
 #include "buildDungeon.h"
 #include "pathFinding.h"
@@ -25,6 +31,21 @@ void saveGame(Dungeon *d);
 void loadGame(Dungeon *d);
 void runGame(Dungeon *d);
 
+void parseFile(Dungeon *d);
+void printCurrDescription(monsterDesc *curr);
+void printMonsterDescriptions(Dungeon *d);
+/*
+void parseName();
+void parseSymb();
+void parseColor();
+void parseDescription();
+void parseSpeed();
+void parseDamage();
+void parseHP();
+void parseAbility();
+void parseRarity();
+*/
+
 void placeCharacter(Dungeon *d, int row, int col, Character *curr){
   d->characterMap[row][col] = curr->type;
   curr->location.row = row;
@@ -36,6 +57,11 @@ int main(int argc, char *argv[]){
   if(argc == 2 && argv[1][0] != '-') seed  = atoi(argv[1]);
   srand(seed);
   Dungeon d;
+
+  parseFile(&d);
+  printMonsterDescriptions(&d);
+
+  exit(0);
   printf("Seed used: %d\n", seed);
   int isLoad = FAILURE;
   int isSave = FAILURE;
@@ -157,6 +183,166 @@ void printMap(Dungeon *d){
     printf("\n");
   }
 }
+
+void clearDescription(monsterDesc *curr){
+  curr->name = "";
+  curr->desc = "";
+  curr->color = "";
+  curr->speed = "";
+  curr->abil = "";
+  curr->hp = "";
+  curr->dam = "";
+  curr->symb = "";
+  curr->rrty = "";
+  curr->count = 0;
+}
+
+monsterFileType getEnum(std::string const &input){
+  if(input == "BEGIN") return BEGIN;
+  if(input == "NAME") return NAME;
+  if(input == "DESC") return DESC;
+  if(input == "COLOR") return COLOR;
+  if(input == "SPEED") return SPEED;
+  if(input == "ABIL") return ABIL;
+  if(input == "HP") return HP;
+  if(input == "DAM") return DAM;
+  if(input == "SYMB") return SYMB;
+  if(input == "RRTY") return RRTY;
+  if(input == "END") return END;
+  else return UNKNOWN;
+}
+
+void parseFile(Dungeon *d){
+  std::string fileName;
+  fileName = getenv("HOME");
+  fileName += "/.rlg327/monster_desc.txt";
+
+  //init ifstream with name we want.
+  std::ifstream fileReader(fileName.c_str());
+  if(!fileReader.is_open()){
+    std::cout << "Could not open file!" << std::endl;
+  }
+
+  //get first line and print it
+  std::string firstLine;
+  getline(fileReader, firstLine);
+
+  std::cout << "File being read: " << firstLine << std::endl;
+  bool stillParsing = true;
+  monsterDesc curr;
+  curr.count = 0;
+  while(stillParsing){
+    //peek at first line of document
+    //swtich case for certain word
+    int check = fileReader.peek();
+    if(check == -1){
+      stillParsing = false;
+      break;
+    }
+    std::string lineId;
+    fileReader >> lineId;
+    monsterFileType decider = getEnum(lineId);
+    std::string temp;
+    fileReader.get(); //remove whitespace
+    getline(fileReader, temp);
+    switch(decider){
+    case BEGIN:
+      break;
+    case NAME:
+      curr.name = temp;
+      curr.count++;
+      break;
+    case DESC:
+      while(temp != "."){
+	curr.desc += temp;
+	curr.desc += "\n";
+	getline(fileReader, temp);
+      }
+      curr.count++;
+      break;
+    case COLOR:
+      curr.color = temp;
+      curr.count++;
+      break;
+    case SPEED: //TODO Parse as 3 integers, into dice class maybe?
+      curr.speed = temp;
+      curr.count++;
+      break;    
+    case ABIL:
+      curr.abil = temp;
+      curr.count++;
+      break;
+    case HP: //TODO Parse as 3 integers, into dice class maybe?
+      curr.hp = temp;
+      curr.count++;
+      break;
+    case DAM: //TODO Parse as 3 integers, into dice class maybe?
+      curr.dam = temp;
+      curr.count++;
+      break;
+    case SYMB:
+      curr.symb = temp;
+      curr.count++;
+      break;
+    case RRTY:
+      curr.rrty = temp;
+      curr.count++;
+      break;
+    case END:
+      d->monsterDescriptions.push_back(curr);
+      clearDescription(&curr);
+      break;
+    case UNKNOWN:
+      std::cout << "Unknown or Default action" << std::endl;
+    default:
+      std::cout << "";
+      clearDescription(&curr);
+      break;
+    }
+  }
+  fileReader.close();
+}
+
+void printDesc(std::string input){
+  for(size_t i = 0; i < input.size(); i++){
+    std::cout << input[i];
+  }
+}
+
+void printCurrDescription(monsterDesc *curr){
+  std::cout << curr->name << std::endl;
+  //std::cout << curr->desc<< std::endl;
+  printDesc(curr->desc);
+  std::cout << curr->color << std::endl;
+  std::cout << curr->speed << std::endl; //dice
+  std::cout << curr->abil << std::endl;
+  std::cout << curr->hp << std::endl;  //dice
+  std::cout << curr->dam << std::endl; //dice
+  std::cout << curr->symb << std::endl;
+  std::cout << curr->rrty << std::endl;
+}
+
+void printMonsterDescriptions(Dungeon *d){
+  std::cout << "Printing monster descriptions" << std::endl;
+  for(std::vector<monsterDesc>:: iterator it = d->monsterDescriptions.begin();
+      it != d->monsterDescriptions.end(); it++){
+    monsterDesc curr = *it;
+    printCurrDescription(&curr);
+    std::cout << std::endl;
+  }
+}
+/* //teacher recommended having bool check if everything is loading into description
+void parseDice(){}
+void parseName(){}
+void parseSymb(){}
+void parseColor(){}
+void parseDescription(){}
+void parseSpeed(){}
+void parseDamage(){}
+void parseHP(){}
+void parseAbility(){}
+void parseRarity(){}
+*/
 
 void saveGame(Dungeon *d){
   FILE *fp;

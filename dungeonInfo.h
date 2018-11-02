@@ -3,6 +3,9 @@
 
 #include <stdio.h>
 #include <stdint.h>
+#include <string>
+#include <vector>
+#include <cstdlib>
 
 #include "heap.h"
 #include "utils.h"
@@ -52,10 +55,36 @@ typedef struct{
 }Character;
 
 
-class ;
+typedef struct{
+  std::string name;
+  std::string desc;
+  std::string color;
+  std::string speed;
+  std::string abil;
+  std::string hp;
+  std::string dam;
+  std::string symb;
+  std::string rrty;
+  int count;
+}monsterDesc;
+
+//monster_desc.txt
+enum monsterFileType{
+  BEGIN,
+  NAME,
+  DESC,
+  COLOR,
+  SPEED,
+  ABIL,
+  HP,
+  DAM,
+  SYMB,
+  RRTY,
+  END,
+  UNKNOWN
+};
 
 typedef struct{
- public:
   uint32_t numOfRooms;
   Room *rooms;
   char map[DUNGEON_HEIGHT][DUNGEON_WIDTH];
@@ -68,6 +97,7 @@ typedef struct{
   Character pc;
   int runs;
   bool fogOfWar;
+  std::vector<monsterDesc> monsterDescriptions;
 }Dungeon;
 
 typedef struct{
@@ -82,5 +112,48 @@ typedef enum dim {
   dim_y,
   num_dims
 } dim_t;
+
+/*
+class monsterDesc{
+ public:
+  std::string name;
+  std::string desc;
+  std::string color;
+  int8_t speed;
+  std::string abil;
+  int32_t hp;
+  int32_t dam;
+  char symb;
+  int32_t rrty;
+  int count;
+  void setName(std::string inputName);
+  std::string getName() {return name;}
+  void setDesc(std::string inputDesc);
+  std::string getDesc() {return desc;}
+  void setColor(std::string inputColor);
+  std::string getColor(){return color;}
+  void setSpeed(int8_t speed);
+  int8_t getSpeed(){return speed;}
+  void setAbil(std::string inputAbil);
+  std::string getAbil(){return abil;}
+  void setHp(int32_t inputHP);
+  int32_t getHP(){return hp;}
+  void setDam(int32_t inputDam);
+  int32_t getDam(){return dam;}
+  void setSymb(char inputSymb);
+  char getSymb(){return dam;}
+  void setRrty(int32_t inputRrty);
+  int32_t getRrty(){return rrty;}
+  void incrementCount();
+};
+
+void monsterDesc::setName(std::string inputName){}
+void monsterDesc::setDesc(std::string inputDesc){}
+void monsterDesc::setColor(std::string inputColor){}
+void monsterDesc::setSpeed(int8_t inputSpeed){}
+
+*/
+
+
 
 #endif

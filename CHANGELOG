@@ -250,7 +250,22 @@ BAD SEEDS:
 	-Fixed a bug where I would sometimes throw a seg fault when I teleport
 	-Now I have a bug where the player can't kill any monster
 	     -Fixed it. When I was killing monsters I was setting their status(whether they are alive or dead) to 1 instead of flase
-	
+
+-10/29
+	-Switching Dungeon into a class. bUt it throws a seg fault when I change levels.
+10/30
+	-Lot of issues working with my code. going to switch to the teachers.
+	-Making class for dice and monster descriptions
+10/31
+	-Ok nevermind, going back to my code. Taking to long to work with the teacher's code.
+	-Removing monster description class, and just putting it and all the methods into my dungeonGame.cpp (main file)
+	     I usually do this anyway, and after I submit it I put it into it's own file. Tried to skip this step this time
+	     and it is not working out well.
+	-Finally parsing files
+	-Current issue is parsing description.
+	     -Everything is printing fine, but description is a little off. I am following the 77 line limit, but that doesn't 
+	     seem to be the right approach. Need to maybe see if a word will print there. Or save the \n somehow 
+	     -Well nevermind, pretty easy fix. just added \n after every read line.
 TODO:
 	-Make my Makefile look more like the teachers.
 	-Make a utils class for common methods I use throughout my code

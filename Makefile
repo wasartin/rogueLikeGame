@@ -1,5 +1,5 @@
-dungeonGame: dungeonGame.o buildDungeon.o heap.o pathFinding.o character.o move.o io.o utils.o
-	g++ -lncurses buildDungeon.o dungeonGame.o heap.o pathFinding.o character.o move.o io.o utils.o -o dungeonGame
+dungeonGame: dungeonGame.o buildDungeon.o heap.o pathFinding.o character.o move.o io.o utils.o dice.o
+	g++ -lncurses buildDungeon.o dungeonGame.o heap.o pathFinding.o character.o move.o io.o utils.o dice.o -o dungeonGame
 
 buildDungeon.o: buildDungeon.cpp dungeonInfo.h buildDungeon.h
 	g++ -c buildDungeon.cpp -Wall -Werror -ggdb -g3 -o buildDungeon.o
@@ -27,5 +27,9 @@ io.o: io.cpp io.h dungeonInfo.h buildDungeon.h move.h
 
 utils.o: utils.cpp utils.h
 	g++ -c utils.cpp -Wall -Werror -ggdb -g3 -o utils.o
+
+dice.o: dice.cpp dice.h
+	g++ -c dice.cpp -Wall -Werror -ggdb -g3 -o dice.o
+
 clean:
-	rm -f buildDungeon.o dungeonGame.o heap.o pathFinding.o character.o io.o move.o dungeonGame
+	rm -f buildDungeon.o dungeonGame.o heap.o pathFinding.o character.o io.o move.o dice.o utils.o monsterDesc.o dungeonGame
