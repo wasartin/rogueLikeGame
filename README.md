@@ -27,6 +27,4 @@
 	* File parsing for specific monsters/bosses creation
 
 
- [Note to self](https://github.com/wasartin/rogueLikeGame/tree/75b6fffebe8c08907eecab654676574e27840ee5 "Last pure C commit")
-
- [Note to self](https://github.com/wasartin/rogueLikeGame/tree/75b6fffebe8c08907eecab654676574e27840ee5 "Last pure C commit")
+# [Note to self](https://github.com/wasartin/rogueLikeGame/tree/75b6fffebe8c08907eecab654676574e27840ee5 "Last pure C commit")
