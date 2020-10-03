@@ -1,7 +1,7 @@
 
 # Rogue-Like Game
 
-[Screenshot of Game](map.png)
+![Screenshot of Game](map.png)
 
 **1. Purpose**
 * A rogue-like game written in C/C++.  [more info] (https://en.wikipedia.org/wiki/Roguelike)
