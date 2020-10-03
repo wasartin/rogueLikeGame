@@ -1,8 +1,32 @@
-Inside of my main file (dungeonGame.cpp) I have parseFile(Dungeon *d) and printMonsterDescriptions(Dungeon *d), Then the program will exit. 
-       In parseFile(...) I find the file, print what it is by the meta data (the first line). Then I go to parsing. I use an enumMap to
-       understand the first word of each line that decides what will happen. Then I parse accordingly. When a monster description is fully
-       loaded, I add it into a vector<monsterDescription> mD where I will iterate through later to print out the values.
+
+# Rogue-Like Game
+
+[Screenshot of Game](map.png)
+
+**1. Purpose**
+* A rogue-like game written in C/C++.  [more info] (https://en.wikipedia.org/wiki/Roguelike)
+
+**2. Environment**
+* Written for a Linux Distribution.
+
+**4. Algorithms used & Libraries**
+* Dijkstra's algorithm for all Path Finding capabilities.
+* Random Algorithm for Level Generation
+* Ncurses Library for display
+
+**6. Operating instructions**
+* '>make'
+	*  terminal command. Which will produce an executable 'rlg'
+* '>./rlg'
+	* terminal command
+
+**7. Options**
+* -s/-l
+	* Saving/Loading
+* -'<file>'
+	* File parsing for specific monsters/bosses creation
 
 
+ [Note to self](https://github.com/wasartin/rogueLikeGame/tree/75b6fffebe8c08907eecab654676574e27840ee5 "Last pure C commit")
 
  [Note to self](https://github.com/wasartin/rogueLikeGame/tree/75b6fffebe8c08907eecab654676574e27840ee5 "Last pure C commit")
