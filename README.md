@@ -4,7 +4,7 @@
 ![Screenshot of Game](map.png)
 
 **1. Purpose**
-* A rogue-like game written in C/C++.  [more info] (https://en.wikipedia.org/wiki/Roguelike)
+* A rogue-like game written in C/C++.  [more info](https://en.wikipedia.org/wiki/Roguelike)
 
 **2. Environment**
 * Written for a Linux Distribution.
