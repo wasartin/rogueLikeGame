@@ -9,18 +9,18 @@
 **2. Environment**
 * Written for a Linux Distribution.
 
-**4. Algorithms used & Libraries**
+**3. Algorithms used & Libraries**
 * Dijkstra's algorithm for all Path Finding capabilities.
 * Random Algorithm for Level Generation
 * Ncurses Library for display
 
-**6. Operating instructions**
+**4. Operating instructions**
 * '>make'
 	*  terminal command. Which will produce an executable 'rlg'
 * '>./rlg'
 	* terminal command
 
-**7. Options**
+**5. Options**
 * -s/-l
 	* Saving/Loading
 * -'<file>'
